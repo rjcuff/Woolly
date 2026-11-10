@@ -1,26 +1,27 @@
 # Woolly
 
-**Ollama runs your models. Woolly remembers for them.**
+Ollama runs your models. Woolly remembers for them.
 
-Woolly is a local memory for your AI tools. Claude, Cursor, ChatGPT and your own scripts
-can all read and write the same memory, and it lives on your laptop as plain Markdown files you own.
+Woolly is a memory for your AI tools that runs on your own computer. Claude, Cursor and your own scripts all read and write the same memory, and it's stored as plain Markdown files you can open and edit.
 
-- **One binary, no setup.** No Docker, no database server, no account.
-- **Files you can read.** Every memory is a `.md` file in `~/.woolly/memories`. Edit it, grep it, back it up, put it in git.
-- **Memories don't go stale.** A newer fact with the same key replaces the old one, so "moved to Denver" wins over "lives in Austin".
-- **You stay in charge.** If an AI guesses something that contradicts what *you* said, it's saved as a conflict for you to review instead of overwriting you.
-- **Works with any MCP app.** Claude Code, Claude Desktop, Cursor and others.
-- **Better with Ollama, but doesn't need it.** If Ollama is running, Woolly adds meaning-based search; otherwise it uses keyword search.
+- One binary. No Docker, no database, no account.
+- Every memory is a `.md` file in `~/.woolly/memories`.
+- When a fact changes, the new one replaces the old one.
+- If an AI contradicts something you said, your version stays and the AI's is flagged for review.
+- Works with Claude Code, Claude Desktop, Cursor and any other MCP app.
+- Ollama is optional. With it, search also matches by meaning.
 
 ## Install
 
 ```sh
 curl -fsSL https://woolly.sh/install.sh | sh
-# or
-go install github.com/woolly/woolly/cmd/woolly@latest
 ```
 
-Full docs live in [`docs/`](docs) and at [woolly.sh/docs](https://woolly.sh/docs).
+Or with Go:
+
+```sh
+go install github.com/woolly/woolly/cmd/woolly@latest
+```
 
 ## Use it
 
@@ -28,78 +29,42 @@ Full docs live in [`docs/`](docs) and at [woolly.sh/docs](https://woolly.sh/docs
 woolly remember "I prefer tabs over spaces" --key code.indent
 woolly remember "Moved to Denver in October" --key user.location
 woolly recall "where do I live"
-woolly list
-woolly conflicts        # review disagreements
-woolly resolve <id>     # keep the right one
-woolly doctor           # check your setup
 ```
 
-## Connect your AI tools
+Bring in what you've already told ChatGPT or Claude:
 
-**Claude Code**
+```sh
+woolly import chatgpt ~/Downloads/chatgpt-export.zip --dry-run
+```
+
+## Connect Claude Code
 
 ```sh
 claude mcp add woolly -- woolly mcp
 ```
 
-**Claude Desktop / Cursor**: add this to the app's MCP config:
+For Claude Desktop and Cursor, add this to the app's MCP config:
 
 ```json
 { "mcpServers": { "woolly": { "command": "woolly", "args": ["mcp"] } } }
 ```
 
-## Semantic search (optional)
+## Docs
 
-Install [Ollama](https://ollama.com), then:
-
-```sh
-ollama pull nomic-embed-text
-woolly doctor   # should say "semantic + keyword"
-```
-
-## HTTP API
-
-`woolly serve` listens on `127.0.0.1:11435` (next to Ollama's 11434) and only accepts local requests.
-
-| Method | Path | Body |
-| --- | --- | --- |
-| POST | `/api/remember` | `{"content", "key"?, "tags"?, "source"?}` |
-| POST | `/api/recall` | `{"query", "limit"?, "include_all"?}` |
-| GET | `/api/memories?all=1` | |
-| GET / DELETE | `/api/memories/{id}` | |
-| GET | `/api/conflicts` | |
-| POST | `/api/resolve` | `{"keep_id"}` |
-
-## How freshness works
-
-| Situation | What happens |
-| --- | --- |
-| Same text again | Treated as a duplicate; the timestamp is refreshed |
-| New fact, same `key` | The old memory is marked `superseded` and hidden from recall |
-| An AI contradicts something you said | Saved as `conflict`; your fact stays current until you `resolve` it |
-
-Trust order: `user` > `import` > `agent`.
-
-## Configuration
-
-| Variable | Default |
-| --- | --- |
-| `WOOLLY_HOME` | `~/.woolly` |
-| `WOOLLY_HOST` | `127.0.0.1:11435` |
-| `OLLAMA_HOST` | `127.0.0.1:11434` |
-| `WOOLLY_EMBED_MODEL` | `nomic-embed-text` |
-| `WOOLLY_NO_EMBED` | unset (set to disable Ollama) |
+Read them at [woolly.sh/docs](https://woolly.sh/docs) or in the [`docs`](docs) folder.
 
 ## Repo layout
 
-| Folder | What's in it |
+| Folder | Contents |
 | --- | --- |
-| `cmd/woolly`, `internal/` | The Woolly program (Go, no dependencies) |
-| `docs/` | Documentation as MDX, rendered by the website |
-| `web/` | Website and docs site (Fumadocs on React Router and Vite) |
-| `scripts/install.sh` | The `curl \| sh` installer |
+| `cmd/woolly`, `internal` | The Woolly program, written in Go |
+| `docs` | Documentation in MDX |
+| `web` | Website and docs site |
+| `scripts` | The install script |
 
-Run the website locally with `cd web && npm install && npm run dev`.
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

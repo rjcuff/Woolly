@@ -1,0 +1,59 @@
+---
+title: Import your history
+description: Bring in what you've already told ChatGPT and Claude.
+---
+
+Woolly can read the chat history you export from ChatGPT or Claude and pull out facts about you, like where you live, what you prefer and what you asked it to remember.
+
+It only reads your own messages. Questions, code and long pastes are skipped. Nothing is uploaded anywhere.
+
+<Steps>
+<Step>
+
+### Export your chats
+
+<Tabs items={['ChatGPT', 'Claude']}>
+  <Tab value="ChatGPT">
+    Go to **Settings → Data controls → Export data**. You'll get an email with a zip file.
+  </Tab>
+  <Tab value="Claude">
+    Go to **Settings → Privacy → Export data**. You'll get an email with a zip file.
+  </Tab>
+</Tabs>
+
+</Step>
+<Step>
+
+### Preview what Woolly finds
+
+```sh
+woolly import chatgpt ~/Downloads/chatgpt-export.zip --dry-run
+```
+
+```txt
+Read 1,204 of your messages from chatgpt and found 37 facts.
+  My name is Ryan  (user.name)
+  I moved to Denver  (user.location)
+  I prefer short answers
+  ...
+```
+
+</Step>
+<Step>
+
+### Import
+
+```sh
+woolly import chatgpt ~/Downloads/chatgpt-export.zip
+```
+
+Use `claude` instead of `chatgpt` for a Claude export.
+
+</Step>
+</Steps>
+
+## What happens to old facts
+
+Messages are read oldest first. If you told ChatGPT you lived in Austin and later said you moved to Denver, Denver is the one that stays current.
+
+Imported facts rank below things you tell Woolly directly. If an import disagrees with you, it's saved as a conflict for you to review with `woolly conflicts`.

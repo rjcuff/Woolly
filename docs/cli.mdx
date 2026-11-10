@@ -10,6 +10,7 @@ description: Everything the woolly command can do.
 | `woolly list` | Show current memories |
 | `woolly show <id>` | Show one memory in full |
 | `woolly forget <id>` | Delete a memory |
+| `woolly import <chatgpt\|claude> <file>` | Import facts from your chat history |
 | `woolly conflicts` | Review facts that disagree |
 | `woolly resolve <id>` | Keep this version as the current fact |
 | `woolly serve` | Run the local HTTP API |
@@ -43,6 +44,18 @@ woolly recall "where do I live" -n 3
 | `-n` | How many results, default 5 |
 | `--all` | Include superseded and conflicting memories |
 | `--json` | Print results as JSON |
+
+## import
+
+```sh
+woolly import chatgpt ~/Downloads/export.zip --dry-run
+```
+
+| Flag | Meaning |
+| --- | --- |
+| `--dry-run` | Show what would be imported without saving |
+
+See [Import your history](/docs/import).
 
 ## list
 

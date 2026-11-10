@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/woolly/woolly/internal/importer"
 	"github.com/woolly/woolly/internal/mcp"
 	"github.com/woolly/woolly/internal/memory"
 	"github.com/woolly/woolly/internal/ollama"
@@ -32,6 +33,7 @@ Usage:
   woolly list [--all] [--json]
   woolly show <id>
   woolly forget <id>
+  woolly import <chatgpt|claude> <export.zip> [--dry-run]
   woolly conflicts
   woolly resolve <id>          keep this memory as the current fact for its key
   woolly serve                 run the local HTTP API (default 127.0.0.1:11435)
@@ -75,6 +77,8 @@ func run(args []string) error {
 		return cmdShow(rest)
 	case "forget", "rm":
 		return cmdForget(rest)
+	case "import":
+		return cmdImport(rest)
 	case "conflicts":
 		return cmdConflicts(rest)
 	case "resolve":
@@ -284,6 +288,65 @@ func cmdForget(args []string) error {
 		return err
 	}
 	fmt.Println("Forgot:", m.Content)
+	return nil
+}
+
+func cmdImport(args []string) error {
+	fs := newFlags("import")
+	dry := fs.Bool("dry-run", false, "show what would be imported without saving")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) != 2 {
+		return errors.New("usage: woolly import <chatgpt|claude> <export.zip or conversations.json> [--dry-run]")
+	}
+	provider := strings.ToLower(pos[0])
+	msgs, err := importer.Load(provider, pos[1])
+	if err != nil {
+		return err
+	}
+	found := importer.Extract(msgs)
+	fmt.Printf("Read %d of your messages from %s and found %d facts.\n", len(msgs), provider, len(found))
+	if len(found) == 0 {
+		return nil
+	}
+	if *dry {
+		for _, c := range found {
+			key := ""
+			if c.Key != "" {
+				key = "  (" + c.Key + ")"
+			}
+			fmt.Printf("  %s%s\n", c.Content, key)
+		}
+		fmt.Println("\nNothing was saved. Run again without --dry-run to import.")
+		return nil
+	}
+	a, err := open()
+	if err != nil {
+		return err
+	}
+	var added, dupes, conflicts int
+	for _, c := range found {
+		res, err := a.store.Remember(memory.RememberInput{
+			Content: c.Content, Key: c.Key, Tags: append([]string{provider}, c.Tags...), Source: memory.SourceImport,
+		})
+		if err != nil {
+			return err
+		}
+		switch {
+		case res.Duplicate:
+			dupes++
+		case res.ConflictsWith != nil:
+			conflicts++
+		default:
+			added++
+		}
+	}
+	fmt.Printf("Imported %d new memories (%d already known).\n", added, dupes)
+	if conflicts > 0 {
+		fmt.Printf("%d disagree with things you told Woolly directly. Review them with: woolly conflicts\n", conflicts)
+	}
 	return nil
 }
 
