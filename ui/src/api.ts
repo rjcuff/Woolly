@@ -12,6 +12,7 @@ export type Memory = {
   updated_at: string;
   superseded_by?: string;
   conflicts_with?: string;
+  inTrash?: boolean; // set by the page for memories shown in the trash
 };
 
 export type RecallResult = { memory: Memory; score: number };
@@ -23,6 +24,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   });
   const text = await res.text();
   const data = text ? JSON.parse(text) : {};
+  if (res.status === 401) throw new Error('This page needs to be opened with `woolly ui`. Run it in your terminal.');
   if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
   return data as T;
 }
@@ -43,9 +45,16 @@ export const api = {
   update: (id: string, patch: { content?: string; key?: string; tags?: string[] }) =>
     call<Memory>(`/api/memories/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   forget: (id: string) => call<unknown>(`/api/memories/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  trash: () => call<{ trash: Memory[] }>('/api/trash').then((r) => r.trash),
+  restore: (id: string) => call<Memory>('/api/restore', { method: 'POST', body: JSON.stringify({ id }) }),
+  emptyTrash: () => call<{ deleted: number }>('/api/trash', { method: 'DELETE' }),
   resolve: (keepId: string) =>
     call<unknown>('/api/resolve', { method: 'POST', body: JSON.stringify({ keep_id: keepId }) }),
-  profile: () => fetch('/api/profile?format=markdown').then((r) => r.text()),
+  profile: async () => {
+    const res = await fetch('/api/profile?format=markdown');
+    if (res.status === 401) throw new Error('This page needs to be opened with `woolly ui`. Run it in your terminal.');
+    return res.text();
+  },
 };
 
 export function splitTags(s: string): string[] {

@@ -11,10 +11,22 @@ woolly serve
 
 It also serves the review page at `http://127.0.0.1:11435`. It listens on `127.0.0.1:11435`, right next to Ollama's `11434`. It only accepts requests from your own machine and blocks requests from websites.
 
+## Authentication
+
+Every request except `/api/version` needs the token stored in `~/.woolly/token`. Send it as a Bearer token:
+
+```sh
+TOKEN=$(cat ~/.woolly/token)
+curl -H "Authorization: Bearer $TOKEN" localhost:11435/api/memories
+```
+
+The review page gets the token automatically when you open it with `woolly ui`.
+
 ## Remember
 
 ```sh
 curl -X POST localhost:11435/api/remember \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"content": "Prefers dark mode", "key": "ui.theme"}'
 ```
 
@@ -22,6 +34,7 @@ curl -X POST localhost:11435/api/remember \
 
 ```sh
 curl -X POST localhost:11435/api/recall \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"query": "dark mode", "limit": 5}'
 ```
 
@@ -43,7 +56,10 @@ curl -X POST localhost:11435/api/recall \
 | `GET` | `/api/memories` | Add `?all=1` for everything |
 | `GET` | `/api/memories/{id}` | |
 | `PATCH` | `/api/memories/{id}` | Any of `content`, `key`, `tags` |
-| `DELETE` | `/api/memories/{id}` | |
+| `DELETE` | `/api/memories/{id}` | Moves the memory to the trash |
+| `GET` | `/api/trash` | |
+| `POST` | `/api/restore` | `id` |
+| `DELETE` | `/api/trash` | Empties the trash for good |
 | `GET` | `/api/profile` | Add `?format=markdown` for Markdown |
 | `GET` | `/api/conflicts` | |
 | `POST` | `/api/resolve` | `keep_id` |

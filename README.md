@@ -8,7 +8,8 @@ Woolly is a memory for your AI tools that runs on your own computer. Claude, Cur
 - Every memory is a `.md` file in `~/.woolly/memories`.
 - When a fact changes, the new one replaces the old one.
 - If an AI contradicts something you said, your version stays and the AI's is flagged for review.
-- Passwords, API keys and card numbers are never saved.
+- Passwords, API keys and card numbers are never saved, and an AI can't plant instructions in your memory.
+- Forgotten memories go to a trash you can restore from.
 - Works with Claude Code, Claude Desktop, Cursor and any other MCP app.
 - Ollama is optional. With it, search also matches by meaning.
 
@@ -32,6 +33,7 @@ woolly remember "Moved to Denver in October" --key user.location
 woolly recall "where do I live"
 woolly profile      # summary of what Woolly knows about you
 woolly ui           # review and edit memories in your browser
+woolly forget <id>  # moves it to the trash; undo with woolly restore <id>
 ```
 
 Bring in what you've already told ChatGPT or Claude:
@@ -65,6 +67,14 @@ Read them at [usewoolly.com/docs](https://usewoolly.com/docs) or in the [`docs`]
 | `ui` | The review page, built into the binary |
 | `web` | Website and docs site |
 | `scripts` | The install script |
+
+## Security
+
+See [SECURITY.md](SECURITY.md) and [usewoolly.com/docs/security](https://usewoolly.com/docs/security).
+
+## Changes
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Contributing
 

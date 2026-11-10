@@ -52,6 +52,8 @@ The site builds to static files in `web/build/client`. It deploys on Vercel with
 - Keep Woolly a single binary with no outside Go dependencies. If you need one, explain why in the issue.
 - Memories must stay plain Markdown files that people can read and edit by hand.
 - Nothing may send data off the user's machine.
+- Anything that changes how data is stored, deleted or exposed needs a test, and an update to `docs/security.mdx` if it changes what Woolly protects against.
+- Add a line to CHANGELOG.md for anything users will notice.
 - Add tests for new behavior. Run `make check` before you commit.
 - Run `gofmt` on Go code.
 - Write docs in plain American English. Short sentences, no jargon.
@@ -84,7 +86,7 @@ Open an issue with:
 
 ## Security
 
-Please don't report security problems in public issues. Email the maintainers instead, and we'll respond as quickly as we can.
+Please don't report security problems in public issues. See [SECURITY.md](SECURITY.md).
 
 ## License
 

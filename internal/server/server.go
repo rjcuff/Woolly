@@ -20,8 +20,9 @@ import (
 const DefaultAddr = "127.0.0.1:11435"
 
 // Handler returns the HTTP handler for the Woolly API.
-func Handler(store *memory.Store, engine *recall.Engine, version string) http.Handler {
+func Handler(store *memory.Store, engine *recall.Engine, version, token string) http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /auth", authHandler(token))
 
 	mux.Handle("GET /", uiHandler())
 	mux.HandleFunc("GET /api/version", func(w http.ResponseWriter, r *http.Request) {
@@ -135,6 +136,39 @@ func Handler(store *memory.Store, engine *recall.Engine, version string) http.Ha
 		writeJSON(w, http.StatusOK, map[string]any{"forgotten": m})
 	})
 
+	mux.HandleFunc("GET /api/trash", func(w http.ResponseWriter, r *http.Request) {
+		mems, err := store.Trash()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"trash": orEmpty(mems)})
+	})
+
+	mux.HandleFunc("POST /api/restore", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			ID string `json:"id"`
+		}
+		if !readJSON(w, r, &req) {
+			return
+		}
+		m, err := store.Restore(req.ID)
+		if err != nil {
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, m)
+	})
+
+	mux.HandleFunc("DELETE /api/trash", func(w http.ResponseWriter, r *http.Request) {
+		n, err := store.EmptyTrash()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]int{"deleted": n})
+	})
+
 	mux.HandleFunc("GET /api/conflicts", func(w http.ResponseWriter, r *http.Request) {
 		mems, err := store.Conflicts()
 		if err != nil {
@@ -159,7 +193,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version string) http.Ha
 		writeJSON(w, http.StatusOK, map[string]any{"kept": kept, "superseded": orEmpty(replaced)})
 	})
 
-	return localOnly(mux)
+	return localOnly(requireToken(token, mux))
 }
 
 // Serve listens on addr until the server fails.
@@ -188,6 +222,11 @@ func localOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !isLocalHost(r.Host) {
 			writeError(w, http.StatusForbidden, "woolly only accepts requests addressed to localhost")
+			return
+		}
+		// Browsers mark requests that come from other sites.
+		if site := r.Header.Get("Sec-Fetch-Site"); site == "cross-site" || site == "same-site" {
+			writeError(w, http.StatusForbidden, "cross-site requests are not allowed")
 			return
 		}
 		if origin := r.Header.Get("Origin"); origin != "" {

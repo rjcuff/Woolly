@@ -25,6 +25,14 @@ func (e *SensitiveError) Error() string {
 	return "not saved: this looks like it contains " + e.What + ". Woolly doesn't store secrets"
 }
 
+// InjectionError is returned when an AI or an import tries to save text that
+// reads like instructions to an AI rather than a fact about the user.
+type InjectionError struct{}
+
+func (e *InjectionError) Error() string {
+	return "not saved: this reads like instructions to an AI, not a fact about the user"
+}
+
 func checkSensitive(text string, allow bool) error {
 	if allow {
 		return nil
@@ -221,6 +229,11 @@ func (s *Store) Remember(in RememberInput) (*RememberResult, error) {
 	if err := checkSensitive(content, in.AllowSensitive); err != nil {
 		return nil, err
 	}
+	// Anything you type yourself is trusted. Text from an AI or an import
+	// could have come from a malicious web page or document.
+	if src != SourceUser && secrets.LooksLikeInstructions(content) {
+		return nil, &InjectionError{}
+	}
 	key := NormalizeKey(in.Key)
 	tags := NormalizeTags(in.Tags)
 
@@ -392,7 +405,10 @@ func (s *Store) Update(id string, in UpdateInput) (Memory, error) {
 	return m.clone(), nil
 }
 
-// Forget permanently deletes a memory's file.
+// trashDir holds forgotten memories until the trash is emptied.
+func (s *Store) trashDir() string { return filepath.Join(filepath.Dir(s.dir), "trash") }
+
+// Forget moves a memory to the trash, where Restore can bring it back.
 func (s *Store) Forget(id string) (Memory, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -403,11 +419,101 @@ func (s *Store) Forget(id string) (Memory, error) {
 	if err != nil {
 		return Memory{}, err
 	}
-	if err := os.Remove(m.file); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := os.MkdirAll(s.trashDir(), 0o700); err != nil {
+		return Memory{}, err
+	}
+	if err := os.Rename(m.file, filepath.Join(s.trashDir(), m.ID+".md")); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return Memory{}, err
 	}
 	delete(s.mems, m.ID)
 	return m.clone(), nil
+}
+
+// Trash lists forgotten memories, newest first.
+func (s *Store) Trash() ([]Memory, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	entries, err := os.ReadDir(s.trashDir())
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var out []Memory
+	for _, e := range entries {
+		if e.IsDir() || !isMemoryFile(e.Name()) {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(s.trashDir(), e.Name()))
+		if err != nil {
+			continue
+		}
+		if m, err := decode(data); err == nil {
+			out = append(out, m.clone())
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].UpdatedAt.After(out[j].UpdatedAt) })
+	return out, nil
+}
+
+// Restore brings a forgotten memory back from the trash.
+func (s *Store) Restore(id string) (Memory, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	trash := s.trashDir()
+	entries, err := os.ReadDir(trash)
+	if err != nil {
+		return Memory{}, ErrNotFound
+	}
+	var match string
+	for _, e := range entries {
+		name := strings.TrimSuffix(e.Name(), ".md")
+		if name == id || (id != "" && strings.HasPrefix(name, id)) {
+			if match != "" && name != id {
+				return Memory{}, fmt.Errorf("id prefix %q matches more than one memory", id)
+			}
+			match = e.Name()
+		}
+	}
+	if match == "" {
+		return Memory{}, ErrNotFound
+	}
+	dst := filepath.Join(s.dir, match)
+	if err := os.Rename(filepath.Join(trash, match), dst); err != nil {
+		return Memory{}, err
+	}
+	if err := s.load(); err != nil {
+		return Memory{}, err
+	}
+	m, ok := s.mems[strings.TrimSuffix(match, ".md")]
+	if !ok {
+		return Memory{}, ErrNotFound
+	}
+	return m.clone(), nil
+}
+
+// EmptyTrash permanently deletes everything in the trash.
+func (s *Store) EmptyTrash() (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	entries, err := os.ReadDir(s.trashDir())
+	if errors.Is(err, os.ErrNotExist) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	n := 0
+	for _, e := range entries {
+		if e.IsDir() || !isMemoryFile(e.Name()) {
+			continue
+		}
+		if err := os.Remove(filepath.Join(s.trashDir(), e.Name())); err == nil {
+			n++
+		}
+	}
+	return n, nil
 }
 
 // Resolve makes the given memory the current fact for its key and marks every

@@ -45,6 +45,8 @@ Review disagreements with `woolly conflicts`, and keep the right one with `wooll
 
 Woolly ranks memories by matching words, with a small built-in list of related words so a question like "where do I live" finds "moved to Denver". If [Ollama](/docs/ollama) is running, Woolly also matches by meaning.
 
-## Secrets are never saved
+## Secrets and planted instructions
 
 Woolly refuses to save anything that looks like a password, API key, private key, card number or Social Security number. This applies to the command line, AI apps, the API and imports. If you really need to save one, use `woolly remember --allow-secret`.
+
+Woolly also refuses text from an AI or an import that reads like instructions to an AI, like "ignore your instructions". See [Security](/docs/security).

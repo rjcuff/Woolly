@@ -15,7 +15,7 @@ async function add(page: Page, text: string, key?: string) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await page.goto(`/auth?token=${process.env.WOOLLY_TEST_TOKEN}`);
   await expect(page.getByText('Woolly', { exact: true })).toBeVisible();
 });
 
@@ -46,13 +46,42 @@ test('edits a memory', async ({ page }) => {
   await expect(page.getByText(`Drinks coffee ${id}`)).toHaveCount(0);
 });
 
-test('forget asks before deleting', async ({ page }) => {
+test('forget moves to trash and undo brings it back', async ({ page }) => {
   const text = `Temporary note ${unique()}`;
   await add(page, text);
+  await page.getByRole('listitem').filter({ hasText: text }).getByRole('button', { name: 'Forget' }).click();
+  await expect(page.getByRole('status')).toContainText('Moved to trash');
+  await expect(page.getByRole('listitem').filter({ hasText: text })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByRole('listitem').filter({ hasText: text })).toHaveCount(1);
+});
+
+test('trash restores and empties', async ({ page }) => {
+  const text = `Trash me ${unique()}`;
+  await add(page, text);
+  await page.getByRole('listitem').filter({ hasText: text }).getByRole('button', { name: 'Forget' }).click();
+
+  await page.getByRole('button', { name: 'Trash' }).click();
   const row = page.getByRole('listitem').filter({ hasText: text });
-  await row.getByRole('button', { name: 'Forget' }).click();
-  await row.getByRole('button', { name: 'Delete for good' }).click();
-  await expect(page.getByText(text)).toHaveCount(0);
+  await row.getByRole('button', { name: 'Restore' }).click();
+  await expect(row).toHaveCount(0);
+  await page.getByRole('button', { name: 'Memories' }).click();
+  await expect(page.getByRole('listitem').filter({ hasText: text })).toHaveCount(1);
+
+  await page.getByRole('listitem').filter({ hasText: text }).getByRole('button', { name: 'Forget' }).click();
+  await page.getByRole('button', { name: 'Trash' }).click();
+  await page.getByRole('button', { name: 'Empty trash' }).click();
+  await page.getByRole('button', { name: 'Delete all for good' }).click();
+  await expect(page.getByText('The trash is empty.')).toBeVisible();
+});
+
+test('without the token the page explains how to open it', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, extraHTTPHeaders: {} });
+  const page = await context.newPage();
+  await page.goto('/');
+  await expect(page.getByRole('alert')).toContainText('woolly ui');
+  await context.close();
 });
 
 test('a new fact with the same key replaces the old one', async ({ page }) => {

@@ -49,7 +49,9 @@ Usage:
   woolly recall <query> [-n 5] [--all] [--json]
   woolly list [--all] [--json]
   woolly show <id>
-  woolly forget <id>
+  woolly forget <id>           move a memory to the trash
+  woolly restore <id>          bring it back
+  woolly trash [--empty]       list the trash, or delete it for good
   woolly import <chatgpt|claude> <export.zip> [--dry-run]
   woolly profile [--json]       summary of everything Woolly knows about you
   woolly conflicts
@@ -100,6 +102,10 @@ func run(args []string) error {
 		return cmdImport(rest)
 	case "profile":
 		return cmdProfile(rest)
+	case "restore":
+		return cmdRestore(rest)
+	case "trash":
+		return cmdTrash(rest)
 	case "conflicts":
 		return cmdConflicts(rest)
 	case "resolve":
@@ -317,7 +323,58 @@ func cmdForget(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Forgot:", m.Content)
+	fmt.Println("Moved to trash:", m.Content)
+	fmt.Println("Undo with: woolly restore", m.ID)
+	return nil
+}
+
+func cmdRestore(args []string) error {
+	id, err := oneID("restore", args)
+	if err != nil {
+		return err
+	}
+	a, err := open()
+	if err != nil {
+		return err
+	}
+	m, err := a.store.Restore(id)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Restored:", m.Content)
+	return nil
+}
+
+func cmdTrash(args []string) error {
+	fs := newFlags("trash")
+	empty := fs.Bool("empty", false, "permanently delete everything in the trash")
+	if _, err := parse(fs, args); err != nil {
+		return err
+	}
+	a, err := open()
+	if err != nil {
+		return err
+	}
+	if *empty {
+		n, err := a.store.EmptyTrash()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Permanently deleted %d memories.\n", n)
+		return nil
+	}
+	mems, err := a.store.Trash()
+	if err != nil {
+		return err
+	}
+	if len(mems) == 0 {
+		fmt.Println("The trash is empty.")
+		return nil
+	}
+	for _, m := range mems {
+		fmt.Println(mcp.Line(m))
+	}
+	fmt.Println("\nRestore one with: woolly restore <id>. Delete all for good with: woolly trash --empty")
 	return nil
 }
 
@@ -362,7 +419,8 @@ func cmdImport(args []string) error {
 			Content: c.Content, Key: c.Key, Tags: append([]string{provider}, c.Tags...), Source: memory.SourceImport,
 		})
 		var sensitive *memory.SensitiveError
-		if errors.As(err, &sensitive) {
+		var injected *memory.InjectionError
+		if errors.As(err, &sensitive) || errors.As(err, &injected) {
 			blocked++
 			continue
 		}
@@ -380,7 +438,7 @@ func cmdImport(args []string) error {
 	}
 	fmt.Printf("Imported %d new memories (%d already known).\n", added, dupes)
 	if blocked > 0 {
-		fmt.Printf("Skipped %d that looked like passwords or keys.\n", blocked)
+		fmt.Printf("Skipped %d that looked like passwords, keys or instructions to an AI.\n", blocked)
 	}
 	if conflicts > 0 {
 		fmt.Printf("%d disagree with things you told Woolly directly. Review them with: woolly conflicts\n", conflicts)
@@ -463,8 +521,13 @@ func cmdServe(args []string) error {
 	if err != nil {
 		return err
 	}
+	token, err := server.EnsureToken(a.home)
+	if err != nil {
+		return err
+	}
 	fmt.Fprintf(os.Stderr, "Woolly %s listening on http://%s (memories: %s)\n", version, *addr, a.store.Dir())
-	return server.Serve(*addr, server.Handler(a.store, a.engine, version))
+	fmt.Fprintf(os.Stderr, "Open the review page with `woolly ui`. API token: %s\n", filepath.Join(a.home, "token"))
+	return server.Serve(*addr, server.Handler(a.store, a.engine, version, token))
 }
 
 // cmdUI opens the review page, starting the server first if it isn't running.
@@ -475,23 +538,28 @@ func cmdUI(args []string) error {
 		return err
 	}
 	url := "http://" + *addr + "/"
+	a, err := open()
+	if err != nil {
+		return err
+	}
+	token, err := server.EnsureToken(a.home)
+	if err != nil {
+		return err
+	}
+	link := url + "auth?token=" + token
 	client := &http.Client{Timeout: time.Second}
 	if res, err := client.Get(url + "api/version"); err == nil {
 		res.Body.Close()
 		fmt.Println("Opening", url)
-		return openBrowser(url)
-	}
-	a, err := open()
-	if err != nil {
-		return err
+		return openBrowser(link)
 	}
 	ln, err := net.Listen("tcp", *addr)
 	if err != nil {
 		return fmt.Errorf("can't start the review page on %s: %w", *addr, err)
 	}
 	fmt.Printf("Woolly review page: %s\nPress Ctrl+C to stop.\n", url)
-	_ = openBrowser(url)
-	return server.ServeListener(ln, server.Handler(a.store, a.engine, version))
+	_ = openBrowser(link)
+	return server.ServeListener(ln, server.Handler(a.store, a.engine, version, token))
 }
 
 func openBrowser(url string) error {

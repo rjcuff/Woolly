@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, type Memory, splitTags } from './api';
 
-type View = 'current' | 'conflicts' | 'all' | 'profile';
+type View = 'current' | 'conflicts' | 'all' | 'trash' | 'profile';
 
 const views: { id: View; label: string }[] = [
   { id: 'current', label: 'Memories' },
   { id: 'conflicts', label: 'Conflicts' },
   { id: 'all', label: 'History' },
+  { id: 'trash', label: 'Trash' },
   { id: 'profile', label: 'Profile' },
 ];
 
-type Notice = { kind: 'ok' | 'error'; text: string } | null;
+type Notice = { kind: 'ok' | 'error'; text: string; undo?: () => void } | null;
 
 export function App() {
   const [view, setView] = useState<View>('current');
@@ -24,7 +25,7 @@ export function App() {
 
   const flash = useCallback((n: Notice) => {
     setNotice(n);
-    if (n?.kind === 'ok') window.setTimeout(() => setNotice((cur) => (cur === n ? null : cur)), 2500);
+    if (n?.kind === 'ok') window.setTimeout(() => setNotice((cur) => (cur === n ? null : cur)), n.undo ? 6000 : 2500);
   }, []);
 
   const load = useCallback(async () => {
@@ -34,6 +35,8 @@ export function App() {
       setConflictCount(conflicts.length);
       if (view === 'profile') {
         setProfileText(await api.profile());
+      } else if (view === 'trash') {
+        setItems((await api.trash()).map((m) => ({ ...m, inTrash: true })));
       } else if (view === 'conflicts') {
         setItems(conflicts);
       } else if (query.trim()) {
@@ -91,6 +94,11 @@ export function App() {
         {notice && (
           <div className={`notice ${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}>
             <span>{notice.text}</span>
+            {notice.undo && (
+              <button className="link undo" onClick={notice.undo}>
+                Undo
+              </button>
+            )}
             <button className="link" onClick={() => setNotice(null)} aria-label="Dismiss">
               ×
             </button>
@@ -102,7 +110,8 @@ export function App() {
         ) : (
           <>
             {view === 'current' && <AddForm onAdd={(c, k, t) => run(() => api.remember(c, k, t), 'Saved')} />}
-            {view !== 'conflicts' && (
+            {view === 'trash' && items.length > 0 && <TrashBar onEmpty={() => run(() => api.emptyTrash(), 'Trash emptied')} />}
+            {view !== 'conflicts' && view !== 'trash' && (
               <input
                 id="search"
                 className="search"
@@ -128,7 +137,20 @@ export function App() {
                     other={m.conflicts_with ? byId.get(m.conflicts_with) : undefined}
                     replacedBy={m.superseded_by ? byId.get(m.superseded_by) : undefined}
                     onSave={(patch) => run(() => api.update(m.id, patch), 'Saved')}
-                    onForget={() => run(() => api.forget(m.id), 'Forgotten')}
+                    onForget={async () => {
+                      try {
+                        await api.forget(m.id);
+                        flash({
+                          kind: 'ok',
+                          text: 'Moved to trash',
+                          undo: () => run(() => api.restore(m.id), 'Restored'),
+                        });
+                        await load();
+                      } catch (e) {
+                        flash({ kind: 'error', text: (e as Error).message });
+                      }
+                    }}
+                    onRestore={() => run(() => api.restore(m.id), 'Restored')}
                     onKeep={(id) => run(() => api.resolve(id), 'Updated')}
                   />
                 ))}
@@ -146,6 +168,8 @@ function Empty({ view, searching }: { view: View; searching: boolean }) {
     ? 'No memories match that search.'
     : view === 'conflicts'
       ? 'No conflicts. Everything agrees.'
+      : view === 'trash'
+        ? 'The trash is empty.'
       : 'No memories yet. Add one above, or connect an AI app.';
   return <p className="empty">{text}</p>;
 }
@@ -203,17 +227,19 @@ function MemoryRow({
   replacedBy,
   onSave,
   onForget,
+  onRestore,
   onKeep,
 }: {
   memory: Memory;
   other?: Memory;
   replacedBy?: Memory;
   onSave: (patch: { content: string; key: string; tags: string[] }) => Promise<boolean>;
-  onForget: () => Promise<boolean>;
+  onForget: () => Promise<void>;
+  onRestore: () => Promise<boolean>;
   onKeep: (id: string) => Promise<boolean>;
 }) {
   const [editing, setEditing] = useState(false);
-  const [confirming, setConfirming] = useState(false);
+  const inTrash = !!m.inTrash;
   const [content, setContent] = useState(m.content);
   const [key, setKey] = useState(m.key ?? '');
   const [tags, setTags] = useState((m.tags ?? []).join(', '));
@@ -269,32 +295,50 @@ function MemoryRow({
       )}
 
       <div className="actions">
-        {m.status === 'conflict' ? (
-          <>
-            <button className="primary" onClick={() => onKeep(m.id)}>
-              Keep this
-            </button>
-            {other && <button onClick={() => onKeep(other.id)}>Keep current fact</button>}
-          </>
-        ) : m.status === 'superseded' ? (
-          <button onClick={() => onKeep(m.id)}>Make current</button>
-        ) : (
-          <button onClick={() => setEditing(true)}>Edit</button>
-        )}
-        {confirming ? (
-          <>
-            <button className="danger" onClick={() => onForget()}>
-              Delete for good
-            </button>
-            <button onClick={() => setConfirming(false)}>Cancel</button>
-          </>
-        ) : (
-          <button className="quiet" onClick={() => setConfirming(true)}>
-            Forget
+        {inTrash ? (
+          <button className="primary" onClick={() => onRestore()}>
+            Restore
           </button>
+        ) : (
+          <>
+            {m.status === 'conflict' ? (
+              <>
+                <button className="primary" onClick={() => onKeep(m.id)}>
+                  Keep this
+                </button>
+                {other && <button onClick={() => onKeep(other.id)}>Keep current fact</button>}
+              </>
+            ) : m.status === 'superseded' ? (
+              <button onClick={() => onKeep(m.id)}>Make current</button>
+            ) : (
+              <button onClick={() => setEditing(true)}>Edit</button>
+            )}
+            <button className="quiet" onClick={() => onForget()}>
+              Forget
+            </button>
+          </>
         )}
       </div>
     </li>
+  );
+}
+
+function TrashBar({ onEmpty }: { onEmpty: () => Promise<boolean> }) {
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <div className="trash-bar">
+      <p className="hint">Forgotten memories stay here until you empty the trash.</p>
+      {confirming ? (
+        <div className="actions">
+          <button className="danger" onClick={() => onEmpty()}>
+            Delete all for good
+          </button>
+          <button onClick={() => setConfirming(false)}>Cancel</button>
+        </div>
+      ) : (
+        <button onClick={() => setConfirming(true)}>Empty trash</button>
+      )}
+    </div>
   );
 }
 

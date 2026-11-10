@@ -14,6 +14,9 @@ This opens a page on your own computer at `http://127.0.0.1:11435`. Nothing on i
 - **Memories:** add, search, edit and forget memories.
 - **Conflicts:** when an AI saved something that disagrees with what you said, pick the one that's right.
 - **History:** see older facts that were replaced, and bring one back with **Make current**.
+- **Trash:** forgotten memories go here. Restore them, or empty the trash to delete them for good. Right after you forget something, an **Undo** button appears.
 - **Profile:** a summary of what Woolly knows about you, ready to copy into any AI's custom instructions.
 
 If `woolly serve` is already running, `woolly ui` opens the page without starting a second server.
+
+The page needs a secret token to read your memories, and `woolly ui` passes it along for you. If you open the address directly, the page will ask you to use `woolly ui` instead.

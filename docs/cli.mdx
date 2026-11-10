@@ -9,7 +9,9 @@ description: Everything the woolly command can do.
 | `woolly recall <query>` | Search your memories |
 | `woolly list` | Show current memories |
 | `woolly show <id>` | Show one memory in full |
-| `woolly forget <id>` | Delete a memory |
+| `woolly forget <id>` | Move a memory to the trash |
+| `woolly restore <id>` | Bring a memory back from the trash |
+| `woolly trash` | List the trash, or delete it for good with `--empty` |
 | `woolly import <chatgpt\|claude> <file>` | Import facts from your chat history |
 | `woolly profile` | Summary of everything Woolly knows about you |
 | `woolly ui` | Open the review page in your browser |
@@ -79,6 +81,17 @@ woolly profile
 ```
 
 Add `--json` for JSON.
+
+## forget, restore and trash
+
+```sh
+woolly forget 20261110-1500
+woolly trash
+woolly restore 20261110-1500
+woolly trash --empty
+```
+
+Forgetting moves a memory to the trash. It's only gone for good after `woolly trash --empty`.
 
 ## list
 

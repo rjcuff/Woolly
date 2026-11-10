@@ -73,6 +73,19 @@ They're plain files, so any backup or sync tool works. You can also keep `~/.woo
 WOOLLY_HOST=127.0.0.1:12000 woolly serve
 ```
 
+## Is Woolly secure?
+
+Woolly keeps everything on your computer, refuses passwords and keys, refuses instructions planted by an AI, and protects its local API with a token. See [Security](/docs/security).
+
+## I forgot a memory by mistake. Can I get it back?
+
+Yes. Forgotten memories go to the trash:
+
+```sh
+woolly trash
+woolly restore <id>
+```
+
 ## How do I delete everything?
 
 Delete the folder:

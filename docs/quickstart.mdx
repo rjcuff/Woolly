@@ -3,10 +3,7 @@ title: Quickstart
 description: Install Woolly, save a memory, and get it back.
 ---
 
-<Steps>
-<Step>
-
-### Install Woolly
+## Install Woolly
 
 <Tabs items={['macOS and Linux', 'Go', 'From source']}>
   <Tab value="macOS and Linux">
@@ -32,22 +29,14 @@ Check that it worked:
 ```sh
 woolly version
 ```
-
-</Step>
-<Step>
-
-### Save a memory
+## Save a memory
 
 ```sh
 woolly remember "I prefer tabs over spaces" --key code.indent
 ```
 
 The `--key` names the fact. Use one for anything that can change, like where you live or which database a project uses.
-
-</Step>
-<Step>
-
-### Get it back
+## Get it back
 
 ```sh
 woolly recall "tabs or spaces"
@@ -56,17 +45,10 @@ woolly recall "tabs or spaces"
 ```txt
 1.05  [20261110-150029-92f9ddf6] I prefer tabs over spaces (key: code.indent; source: user)
 ```
-
-</Step>
-<Step>
-
-### Connect your AI
+## Connect your AI
 
 ```sh
 claude mcp add woolly -- woolly mcp
 ```
 
 Now Claude can remember and recall on its own. See [Connect your apps](/docs/connect) for Claude Desktop and Cursor.
-
-</Step>
-</Steps>

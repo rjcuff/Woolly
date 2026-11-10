@@ -10,37 +10,21 @@ description: Optional. Turn on search by meaning, still fully local.
 Without Ollama, Woolly finds memories by matching words. With Ollama, it also understands meaning, so "what pets do I have" finds "Biscuit is a golden retriever" even though no words match.
 
 Everything still runs on your machine.
-
-<Steps>
-<Step>
-
-### Install Ollama
+## Install Ollama
 
 Download it from [ollama.com](https://ollama.com).
-
-</Step>
-<Step>
-
-### Pull the embedding model
+## Pull the embedding model
 
 ```sh
 ollama pull nomic-embed-text
 ```
 
 It's about 270 MB.
-
-</Step>
-<Step>
-
-### Check it
+## Check it
 
 ```sh
 woolly doctor
 ```
 
 You should see `search: semantic + keyword`.
-
-</Step>
-</Steps>
-
 To use a different model, set `WOOLLY_EMBED_MODEL`. To turn Ollama off, set `WOOLLY_NO_EMBED=1`.

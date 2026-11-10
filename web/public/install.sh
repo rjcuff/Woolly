@@ -18,13 +18,32 @@ case "$os" in
   *) echo "Unsupported OS: $os. On Windows, download the zip from https://github.com/$REPO/releases" >&2; exit 1 ;;
 esac
 
-url="https://github.com/$REPO/releases/latest/download/woolly_${os}_${arch}.tar.gz"
+file="woolly_${os}_${arch}.tar.gz"
+base="https://github.com/$REPO/releases/latest/download"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
 echo "Downloading Woolly for $os/$arch..."
-curl -fsSL "$url" -o "$tmp/woolly.tar.gz"
-tar -xzf "$tmp/woolly.tar.gz" -C "$tmp"
+curl -fsSL "$base/$file" -o "$tmp/$file"
+curl -fsSL "$base/checksums.txt" -o "$tmp/checksums.txt"
+
+# Make sure the download matches the checksum published with the release.
+expected=$(grep " $file\$" "$tmp/checksums.txt" | awk '{print $1}')
+if command -v shasum >/dev/null 2>&1; then
+  actual=$(shasum -a 256 "$tmp/$file" | awk '{print $1}')
+elif command -v sha256sum >/dev/null 2>&1; then
+  actual=$(sha256sum "$tmp/$file" | awk '{print $1}')
+else
+  echo "Can't verify the download: no shasum or sha256sum found." >&2
+  exit 1
+fi
+if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
+  echo "The download doesn't match the published checksum. Nothing was installed." >&2
+  exit 1
+fi
+echo "Verified checksum."
+
+tar -xzf "$tmp/$file" -C "$tmp"
 
 # Use sudo only if the folder (or where it would be created) isn't writable.
 target="$INSTALL_DIR"
