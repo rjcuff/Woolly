@@ -1,7 +1,7 @@
 VERSION ?= 0.1.0-dev
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: build test install ui web-test ui-test py-test check release publish demo
+.PHONY: build test install ui web-test ui-test py-test check release publish demo pypi
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/woolly ./cmd/woolly
@@ -42,3 +42,8 @@ publish: release
 # Records docs/demo.gif from real woolly output.
 demo: build
 	cd web && node scripts/demo.ts
+
+# Builds and uploads the woolly-ai Python package. Bump the version in
+# sdk/python/pyproject.toml and sdk/python/woolly/__init__.py first.
+pypi: py-test
+	cd sdk/python && rm -rf dist && python3 -m build && python3 -m twine upload dist/*

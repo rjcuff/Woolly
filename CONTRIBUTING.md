@@ -43,6 +43,8 @@ The `woolly-ai` package lives in `sdk/python`. It has no dependencies. Its tests
 make py-test
 ```
 
+To publish a new version to PyPI, bump the version in `sdk/python/pyproject.toml` and `sdk/python/woolly/__init__.py`, then run `make pypi`. It needs `pip install build twine` and a PyPI token.
+
 ### Website and docs
 
 ```sh

@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 
-- `woolly-ai` Python package: save, recall and add memories to prompts from your own apps.
+- New Python package: `pip install woolly-ai`. Save, recall and add memories to prompts from your own apps. See [Python](https://usewoolly.com/docs/python).
+- New README and docs introduction.
 
 ## 0.4.0
 
