@@ -5,7 +5,7 @@ export const tagline = 'Local memory for your AI tools';
 export const siteDescription =
   'Woolly gives Claude, Cursor and your own tools one shared memory that lives in plain files on your laptop. Open source, private, and free.';
 // The public URL of the site. Update this once the domain is live.
-export const siteUrl = 'https://woolly.sh';
+export const siteUrl = 'https://usewooly.com';
 export const docsRoute = '/docs';
 export const docsImageRoute = '/og/docs';
 export const docsContentRoute = '/llms.mdx/docs';
@@ -28,7 +28,7 @@ export function getPageMarkdownUrl(page: { slugs: string[]; locale?: string }) {
 const getImageUrl = createGetUrl(docsImageRoute);
 
 export function getPageImageUrl(page: { slugs: string[]; locale?: string }) {
-  const segments = [...page.slugs, 'image.webp'];
+  const segments = [...page.slugs, 'image.png'];
 
   return { segments, url: getImageUrl(segments, page.locale) };
 }

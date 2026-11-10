@@ -6,7 +6,7 @@ import { appName, githubUrl, siteDescription, tagline } from '@/lib/shared';
 
 export function meta(_: Route.MetaArgs) {
   return [
-    ...seo({ title: `${appName} | ${tagline}`, description: siteDescription, path: '/', image: '/og/docs/image.webp' }),
+    ...seo({ title: `${appName} | ${tagline}`, description: siteDescription, path: '/', image: '/og/docs/image.png' }),
     {
       'script:ld+json': {
         '@context': 'https://schema.org',

@@ -1,7 +1,7 @@
 import type { Route } from './+types/og.docs';
-import { generateOGImage } from 'fumadocs-ui/og/takumi';
 import { source } from '@/lib/source';
-import { appName, tagline } from '@/lib/shared';
+import { tagline } from '@/lib/shared';
+import { ogImage } from '@/lib/og';
 
 export function loader({ params }: Route.LoaderArgs) {
   const slugs = params['*']
@@ -9,13 +9,7 @@ export function loader({ params }: Route.LoaderArgs) {
     .filter((v) => v.length > 0)
     .slice(0, -1);
   const page = source.getPage(slugs);
-
   if (!page) throw new Response(undefined, { status: 404 });
 
-  return generateOGImage({
-    title: page.slugs.length === 0 ? `${appName}` : page.data.title,
-    description: page.slugs.length === 0 ? tagline : page.data.description,
-    site: appName,
-    format: 'webp',
-  });
+  return ogImage(slugs.length === 0 ? tagline : page.data.title);
 }

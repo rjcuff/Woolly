@@ -14,7 +14,7 @@ Woolly is a memory for your AI tools that runs on your own computer. Claude, Cur
 ## Install
 
 ```sh
-curl -fsSL https://woolly.sh/install.sh | sh
+curl -fsSL https://usewooly.com/install.sh | sh
 ```
 
 Or with Go:
@@ -51,7 +51,7 @@ For Claude Desktop and Cursor, add this to the app's MCP config:
 
 ## Docs
 
-Read them at [woolly.sh/docs](https://woolly.sh/docs) or in the [`docs`](docs) folder.
+Read them at [usewooly.com/docs](https://usewooly.com/docs) or in the [`docs`](docs) folder.
 
 ## Repo layout
 

@@ -33,6 +33,8 @@ npm run dev     # http://localhost:5173
 
 Docs live in the top-level `docs` folder as MDX. Add a page there and list it in `docs/meta.json`.
 
+The site builds to static files in `web/build/client`. It deploys on Vercel with the project root set to `web`, using the settings in `web/vercel.json`.
+
 ## Guidelines
 
 - Keep Woolly a single binary with no outside Go dependencies. If you need one, explain why in the issue.

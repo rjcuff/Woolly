@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "react-router build",
+    "build": "react-router build && cp build/client/__spa-fallback.html build/client/404.html",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "types:check": "react-router typegen && tsc --noEmit"
@@ -11,6 +11,7 @@
   "dependencies": {
     "@react-router/node": "^8.5.1",
     "@react-router/serve": "^8.5.1",
+    "@takumi-rs/core": "^2.20.0",
     "clsx": "^2.1.1",
     "cn": "^0.5.2",
     "fumadocs-core": "16.18.4",
