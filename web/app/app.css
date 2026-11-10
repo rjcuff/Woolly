@@ -34,10 +34,16 @@ html > body[data-scroll-locked] {
   line-height: 1.75;
 }
 .prose :where(h2) {
-  margin-top: 2.6em;
+  margin-top: 2em;
+  font-size: 1.375rem;
+  letter-spacing: -0.01em;
 }
 .prose :where(h3) {
-  margin-top: 2em;
+  margin-top: 1.6em;
+  font-size: 1.1rem;
+}
+.prose > :where(:first-child) {
+  margin-top: 0;
 }
 
 /* Make every click feel like a click: a small press on buttons, and a clear

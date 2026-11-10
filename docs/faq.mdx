@@ -1,25 +1,97 @@
 ---
 title: FAQ
-description: Common questions about Woolly.
+description: Answers to common questions about Woolly.
 ---
 
-<Accordions>
-<Accordion title="Do I need Ollama?">
-No. Woolly works fully on its own. Ollama only adds search by meaning. See [Using Ollama](/docs/ollama).
-</Accordion>
-<Accordion title="Does Woolly send my data anywhere?">
-No. There is no cloud, no telemetry and no account. Your memories stay in `~/.woolly` on your computer.
-</Accordion>
-<Accordion title="How is this different from ChatGPT or Claude memory?">
-Those memories live inside one app, on someone else's servers. Woolly is shared by every app you connect, and it lives on your machine in files you can read.
-</Accordion>
-<Accordion title="Can I edit memories by hand?">
-Yes. Each memory is a Markdown file. Edit it in any editor and Woolly picks up the change.
-</Accordion>
-<Accordion title="How do I delete everything?">
-Delete the `~/.woolly` folder.
-</Accordion>
-<Accordion title="Is it free?">
+## Do I need Ollama?
+
+No. Woolly works on its own. If Ollama is running, Woolly also uses it to search by meaning. See [Using Ollama](/docs/ollama).
+
+## Does Woolly send my data anywhere?
+
+No. Woolly has no servers, no accounts and no tracking. Your memories stay in `~/.woolly` on your computer. See the [privacy policy](/privacy).
+
+## Where are my memories stored?
+
+In `~/.woolly/memories`, one Markdown file per memory. To keep them somewhere else, set `WOOLLY_HOME`:
+
+```sh
+export WOOLLY_HOME=~/Dropbox/woolly
+```
+
+## Can I edit memories by hand?
+
+Yes. Open any file in `~/.woolly/memories` in a text editor and save it. Woolly picks up the change right away. You can also edit memories on the [review page](/docs/review).
+
+## How do I update Woolly?
+
+Run the install command again:
+
+```sh
+curl -fsSL https://usewoolly.com/install.sh | sh
+```
+
+Your memories are not touched.
+
+## Which apps work with Woolly?
+
+Any app that supports MCP, including Claude Code, Claude Desktop and Cursor. See [Connect your apps](/docs/connect).
+
+## How is this different from ChatGPT or Claude memory?
+
+Those memories live inside one app, on that company's servers. Woolly is shared by every app you connect, and it lives on your computer in files you can read.
+
+## What happens when a fact changes?
+
+If a new memory has the same key as an old one, the new one replaces it and the old one is hidden from search. If an AI saves something that disagrees with what you said, your version stays and the AI's is saved as a conflict for you to review. See [How it works](/docs/how-it-works).
+
+## Why didn't my memory save?
+
+Woolly refuses anything that looks like a password, API key, card number or Social Security number. If you're sure, add `--allow-secret`:
+
+```sh
+woolly remember "Test card 4242 4242 4242 4242" --allow-secret
+```
+
+## How do I see what my AI saved?
+
+Run `woolly list`, or open the review page:
+
+```sh
+woolly ui
+```
+
+## How do I back up or sync my memories?
+
+They're plain files, so any backup or sync tool works. You can also keep `~/.woolly/memories` in a private git repo. See [Configuration](/docs/configuration).
+
+## How do I change the port?
+
+`woolly serve` and `woolly ui` use port `11435`. To change it:
+
+```sh
+WOOLLY_HOST=127.0.0.1:12000 woolly serve
+```
+
+## How do I delete everything?
+
+Delete the folder:
+
+```sh
+rm -rf ~/.woolly
+```
+
+## How do I uninstall Woolly?
+
+Delete the program, then delete your memories if you want them gone too:
+
+```sh
+sudo rm /usr/local/bin/woolly
+rm -rf ~/.woolly
+```
+
+Remember to remove Woolly from any AI app you connected it to.
+
+## Is Woolly free?
+
 Yes. Woolly is open source under the MIT license.
-</Accordion>
-</Accordions>

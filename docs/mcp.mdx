@@ -84,17 +84,18 @@ The app and Woolly talk directly on your computer, not over the internet. Woolly
 
 ## Troubleshooting
 
-<Accordions>
-<Accordion title="The AI never uses Woolly">
+### The AI never uses Woolly
+
 Check that the app lists Woolly as connected. In Claude Code, run `claude mcp list`. In Claude Desktop and Cursor, look in the app's MCP or tools settings. Restart the app after changing its config.
-</Accordion>
-<Accordion title="The app says it can't find woolly">
+
+### The app says it can't find woolly
+
 Apps don't always see the same `PATH` as your terminal. Use the full path in the config. Run `which woolly` to get it.
-</Accordion>
-<Accordion title="I want to see what the AI saved">
+
+### I want to see what the AI saved
+
 Run `woolly list`, or open the [review page](/docs/review) with `woolly ui`.
-</Accordion>
-<Accordion title="The AI saved something wrong">
+
+### The AI saved something wrong
+
 Edit or forget it on the review page, or run `woolly forget <id>`.
-</Accordion>
-</Accordions>

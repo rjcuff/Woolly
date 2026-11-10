@@ -1,5 +1,5 @@
 import type { Route } from './+types/docs';
-import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+import { DocsLayout } from 'fumadocs-ui/layouts/notebook';
 import {
   DocsBody,
   DocsDescription,
@@ -7,7 +7,7 @@ import {
   DocsTitle,
   MarkdownCopyButton,
   ViewOptionsPopover,
-} from 'fumadocs-ui/layouts/docs/page';
+} from 'fumadocs-ui/layouts/notebook/page';
 import { docs, source } from '@/lib/source';
 import { baseOptions } from '@/lib/layout.shared';
 import { useFumadocsLoader } from 'fumadocs-core/source/client';
@@ -77,7 +77,15 @@ export default function Page({ loaderData }: Route.ComponentProps) {
   const { path, pageTree, imagePath, markdownUrl } = useFumadocsLoader(loaderData);
 
   return (
-    <DocsLayout {...baseOptions()} tree={pageTree}>
+    <DocsLayout
+      {...baseOptions()}
+      nav={{ ...baseOptions().nav, mode: 'top' }}
+      links={[
+        { text: 'Home', url: '/', active: 'none' },
+        { text: 'Download', url: '/docs/quickstart', active: 'none' },
+      ]}
+      tree={pageTree}
+    >
       <Content path={path} markdownUrl={markdownUrl} imagePath={imagePath} />
     </DocsLayout>
   );
