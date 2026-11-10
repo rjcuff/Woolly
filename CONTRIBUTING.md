@@ -55,10 +55,12 @@ The site builds to static files in `web/build/client`. It deploys on Vercel with
 ## Releases
 
 ```sh
-make release VERSION=0.1.1
+make publish VERSION=0.1.1
 ```
 
-This runs every test, then builds archives for macOS, Linux and Windows into `dist/`. Tag the commit, create a GitHub release for the tag, and upload everything in `dist/`. Don't mark it as a pre-release, or the install script won't find it.
+This runs every test, builds archives for macOS, Linux and Windows into `dist/`, tags the commit, pushes, and creates the GitHub release with the archives attached. It uses the GitHub login git already has saved.
+
+To build the archives without publishing, run `make release VERSION=0.1.1`.
 
 ## Reporting bugs
 

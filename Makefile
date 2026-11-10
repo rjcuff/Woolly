@@ -1,7 +1,7 @@
 VERSION ?= 0.1.0-dev
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: build test install web-test check release
+.PHONY: build test install web-test check release publish
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/woolly ./cmd/woolly
@@ -22,3 +22,7 @@ check: test web-test
 # make release VERSION=0.1.1
 release: check
 	scripts/release.sh $(VERSION)
+
+# make publish VERSION=0.1.1  (tests, builds, tags, pushes and uploads the release)
+publish: release
+	scripts/publish.sh $(VERSION)
