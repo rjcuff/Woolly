@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/woolly/woolly/internal/memory"
-	"github.com/woolly/woolly/internal/recall"
+	"github.com/rjcuff/wooly/internal/memory"
+	"github.com/rjcuff/wooly/internal/recall"
 )
 
 func TestHandshakeRememberRecall(t *testing.T) {

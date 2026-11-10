@@ -13,8 +13,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/woolly/woolly/internal/memory"
-	"github.com/woolly/woolly/internal/recall"
+	"github.com/rjcuff/wooly/internal/memory"
+	"github.com/rjcuff/wooly/internal/recall"
 )
 
 var supportedVersions = []string{"2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"}

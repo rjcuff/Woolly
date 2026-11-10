@@ -15,12 +15,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/woolly/woolly/internal/importer"
-	"github.com/woolly/woolly/internal/mcp"
-	"github.com/woolly/woolly/internal/memory"
-	"github.com/woolly/woolly/internal/ollama"
-	"github.com/woolly/woolly/internal/recall"
-	"github.com/woolly/woolly/internal/server"
+	"github.com/rjcuff/wooly/internal/importer"
+	"github.com/rjcuff/wooly/internal/mcp"
+	"github.com/rjcuff/wooly/internal/memory"
+	"github.com/rjcuff/wooly/internal/ollama"
+	"github.com/rjcuff/wooly/internal/recall"
+	"github.com/rjcuff/wooly/internal/server"
 )
 
 var version = "0.1.0-dev"

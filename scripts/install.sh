@@ -3,7 +3,7 @@
 #   curl -fsSL https://woolly.sh/install.sh | sh
 set -eu
 
-REPO="woolly/woolly"
+REPO="rjcuff/wooly"
 INSTALL_DIR="${WOOLLY_INSTALL_DIR:-/usr/local/bin}"
 
 os=$(uname -s | tr '[:upper:]' '[:lower:]')

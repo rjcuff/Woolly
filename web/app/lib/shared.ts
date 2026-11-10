@@ -11,8 +11,8 @@ export const docsImageRoute = '/og/docs';
 export const docsContentRoute = '/llms.mdx/docs';
 
 export const gitConfig = {
-  user: 'woolly',
-  repo: 'woolly',
+  user: 'rjcuff',
+  repo: 'wooly',
   branch: 'main',
 };
 export const githubUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/woolly/woolly/internal/memory"
+	"github.com/rjcuff/wooly/internal/memory"
 )
 
 func seed(t *testing.T) *memory.Store {

@@ -20,7 +20,7 @@ curl -fsSL https://woolly.sh/install.sh | sh
 Or with Go:
 
 ```sh
-go install github.com/woolly/woolly/cmd/woolly@latest
+go install github.com/rjcuff/wooly/cmd/woolly@latest
 ```
 
 ## Use it
