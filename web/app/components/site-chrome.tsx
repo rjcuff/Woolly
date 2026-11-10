@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { GitHubIcon, SiteThemeToggle, Wordmark } from '@/components/brand';
+import { BlueskyIcon, GitHubIcon, SiteThemeToggle, Wordmark } from '@/components/brand';
 import { blueskyUrl, githubUrl } from '@/lib/shared';
 
 export function SiteHeader() {
@@ -40,8 +40,8 @@ export function SiteFooter() {
         <a href={githubUrl} className="hover:text-fd-foreground">
           GitHub
         </a>
-        <a href={blueskyUrl} className="hover:text-fd-foreground">
-          Bluesky
+        <a href={blueskyUrl} aria-label="Bluesky" title="Woolly on Bluesky" className="hover:text-fd-foreground">
+          <BlueskyIcon className="size-4" />
         </a>
       </nav>
     </footer>
