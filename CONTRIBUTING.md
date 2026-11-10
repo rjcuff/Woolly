@@ -14,7 +14,8 @@ You need Go 1.22 or newer. Node 22 is only needed for the website.
 git clone https://github.com/rjcuff/wooly
 cd wooly
 make build      # builds bin/woolly
-make test       # runs go vet and the tests
+make test       # Go tests
+make check      # Go tests, site type check and browser tests (run before every commit)
 ```
 
 Try your build without touching your real memories:
@@ -40,7 +41,7 @@ The site builds to static files in `web/build/client`. It deploys on Vercel with
 - Keep Woolly a single binary with no outside Go dependencies. If you need one, explain why in the issue.
 - Memories must stay plain Markdown files that people can read and edit by hand.
 - Nothing may send data off the user's machine.
-- Add tests for new behavior. Run `make test` before you open a pull request.
+- Add tests for new behavior. Run `make check` before you commit.
 - Run `gofmt` on Go code.
 - Write docs in plain American English. Short sentences, no jargon.
 
@@ -48,8 +49,16 @@ The site builds to static files in `web/build/client`. It deploys on Vercel with
 
 1. Fork the repo and create a branch from `main`.
 2. Make your change with tests.
-3. Make sure `make test` and `cd web && npm run build` pass.
+3. Make sure `make check` passes.
 4. Open a pull request that says what changed and why.
+
+## Releases
+
+```sh
+make release VERSION=0.1.1
+```
+
+This runs every test, then builds archives for macOS, Linux and Windows into `dist/`. Tag the commit, create a GitHub release for the tag, and upload everything in `dist/`. Don't mark it as a pre-release, or the install script won't find it.
 
 ## Reporting bugs
 

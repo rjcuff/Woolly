@@ -5,3 +5,5 @@ dist/
 web/node_modules/
 web/build/
 web/.react-router/
+web/test-results/
+web/playwright-report/

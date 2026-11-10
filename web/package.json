@@ -6,7 +6,8 @@
     "build": "react-router build && cp build/client/__spa-fallback.html build/client/404.html",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "types:check": "react-router typegen && tsc --noEmit"
+    "types:check": "react-router typegen && tsc --noEmit",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@react-router/node": "^8.5.1",
@@ -28,6 +29,7 @@
     "takumi-js": "^2.19.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@react-router/dev": "^8.5.1",
     "@tailwindcss/vite": "^4.3.5",
     "@types/mdx": "^2.0.14",
@@ -35,6 +37,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "react-router-devtools": "^6.2.3",
+    "serve": "^14.2.4",
     "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.6"
