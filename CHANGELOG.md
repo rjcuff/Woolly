@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `woolly proxy` gives memory to Ollama and to apps that use the OpenAI or Anthropic API. It adds relevant memories to each chat and saves facts you state.
 - Windows install script: `irm https://usewoolly.com/install.ps1 | iex`.
 - Homebrew formula, published to `rjcuff/homebrew-tap` on every release.
 

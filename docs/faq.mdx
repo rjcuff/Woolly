@@ -43,6 +43,16 @@ Your memories are not touched.
 
 Any app that supports MCP, including Claude Code, Claude Desktop and Cursor. See [Connect your apps](/docs/connect).
 
+## Can I use Woolly with Ollama?
+
+Yes. Run `woolly proxy` and point Ollama at it:
+
+```sh
+OLLAMA_HOST=127.0.0.1:11436 ollama run llama3.2
+```
+
+The proxy also works with any app that uses the OpenAI or Anthropic API. See [Proxy](/docs/proxy).
+
 ## How is this different from ChatGPT or Claude memory?
 
 Those memories live inside one app, on that company's servers. Woolly is shared by every app you connect, and it lives on your computer in files you can read.

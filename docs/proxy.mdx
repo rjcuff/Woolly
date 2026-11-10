@@ -1,0 +1,76 @@
+---
+title: Proxy
+description: Give memory to Ollama and to any app that uses the OpenAI or Anthropic API.
+---
+
+Some apps don't support MCP. The Woolly proxy gives them memory anyway. It sits between the app and the AI it talks to, and on every chat it adds the memories that matter to what you just asked.
+
+```sh
+woolly proxy
+```
+
+It runs on `127.0.0.1:11436`, next to Ollama's `11434`.
+
+## Use it with Ollama
+
+Point Ollama's command line at the proxy:
+
+```sh
+OLLAMA_HOST=127.0.0.1:11436 ollama run llama3.2
+```
+
+Now when you ask "where should I go hiking this weekend?", the model also sees that you moved to Denver. Any app that talks to Ollama works the same way. Set its Ollama address to `http://127.0.0.1:11436`.
+
+## Use it with OpenAI-compatible apps
+
+Set the app's base URL to:
+
+```txt
+http://127.0.0.1:11436/v1
+```
+
+By default these requests go to Ollama's OpenAI-compatible API. To use OpenAI or another provider, tell the proxy where to send them:
+
+```sh
+woolly proxy --openai https://api.openai.com
+```
+
+## Use it with Anthropic apps
+
+Set the app's base URL to:
+
+```txt
+http://127.0.0.1:11436
+```
+
+Requests to `/v1/messages` go to `https://api.anthropic.com`.
+
+## What it does
+
+- **Adds memories.** For each chat request, Woolly searches your memories using your latest message and adds the best matches as a short note at the start of the conversation. The note tells the model these are information about you, not instructions.
+- **Saves facts you state.** If you say "I work at Acme" or "remember that I'm allergic to peanuts", Woolly saves it, using the same rules as [importing](/docs/import). Turn this off with `--no-save`.
+- **Leaves everything else alone.** Replies stream back exactly as the AI sent them. Other requests, like listing models, pass straight through.
+
+Each response includes an `X-Woolly-Memories` header with the number of memories that were added.
+
+## Privacy and security
+
+- Your API keys pass straight through to the provider. Woolly never stores them.
+- The proxy only listens on your computer, and it rejects requests from websites.
+- Passwords, keys and instructions aimed at an AI are never saved. See [Security](/docs/security).
+- The memories added to a request are sent to the AI you're using. If that's a cloud service, its privacy policy applies. With Ollama, everything stays on your computer.
+
+## Options
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `--addr` | `127.0.0.1:11436` | Where the proxy listens |
+| `--ollama` | `OLLAMA_HOST` or `127.0.0.1:11434` | Where Ollama is running |
+| `--openai` | Same as Ollama | Where `/v1` requests go |
+| `--anthropic` | `https://api.anthropic.com` | Where `/v1/messages` requests go |
+| `-n` | `6` | Memories added per request |
+| `--no-save` | off | Don't save facts from chats |
+
+## MCP or proxy?
+
+Use [MCP](/docs/connect) when the app supports it, like Claude Code, Claude Desktop and Cursor. The AI decides when to look things up and what to save. Use the proxy for everything else.

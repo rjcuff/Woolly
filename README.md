@@ -11,6 +11,7 @@ Woolly is a memory for your AI tools that runs on your own computer. Claude, Cur
 - Passwords, API keys and card numbers are never saved, and an AI can't plant instructions in your memory.
 - Forgotten memories go to a trash you can restore from.
 - Works with Claude Code, Claude Desktop, Cursor and any other MCP app.
+- `woolly proxy` gives memory to Ollama and to any app that uses the OpenAI or Anthropic API.
 - Ollama is optional. With it, search also matches by meaning.
 
 ## Install
@@ -59,6 +60,15 @@ For Claude Desktop and Cursor, add this to the app's MCP config:
 ```json
 { "mcpServers": { "woolly": { "command": "woolly", "args": ["mcp"] } } }
 ```
+
+## Give Ollama a memory
+
+```sh
+woolly proxy
+OLLAMA_HOST=127.0.0.1:11436 ollama run llama3.2
+```
+
+Every chat now includes what Woolly knows about you, and facts you mention are saved. It also works with OpenAI and Anthropic apps. See [Proxy](https://usewoolly.com/docs/proxy).
 
 ## Docs
 

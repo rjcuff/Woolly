@@ -9,8 +9,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -25,6 +27,7 @@ import (
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/ollama"
 	"github.com/rjcuff/woolly/internal/profile"
+	"github.com/rjcuff/woolly/internal/proxy"
 	"github.com/rjcuff/woolly/internal/recall"
 	"github.com/rjcuff/woolly/internal/server"
 )
@@ -59,6 +62,7 @@ Usage:
   woolly ui                    open the review page in your browser
   woolly serve                 run the local HTTP API and review page (default 127.0.0.1:11435)
   woolly mcp                   run as an MCP server on stdio (for Claude, Cursor, ...)
+  woolly proxy                 give memory to Ollama and OpenAI or Anthropic apps (127.0.0.1:11436)
   woolly doctor                check your setup
   woolly version
 
@@ -116,6 +120,8 @@ func run(args []string) error {
 		return cmdServe(rest)
 	case "mcp":
 		return cmdMCP(rest)
+	case "proxy":
+		return cmdProxy(rest)
 	case "doctor":
 		return cmdDoctor(rest)
 	}
@@ -573,6 +579,71 @@ func openBrowser(url string) error {
 		cmd = exec.Command("xdg-open", url)
 	}
 	return cmd.Start()
+}
+
+func cmdProxy(args []string) error {
+	fs := newFlags("proxy")
+	addr := fs.String("addr", envOr("WOOLLY_PROXY_HOST", proxy.DefaultAddr), "listen address")
+	ollamaURL := fs.String("ollama", "", "Ollama address (default: OLLAMA_HOST or 127.0.0.1:11434)")
+	openaiURL := fs.String("openai", "", "OpenAI-compatible API for /v1 requests (default: Ollama)")
+	anthropicURL := fs.String("anthropic", "https://api.anthropic.com", "Anthropic API address")
+	limit := fs.Int("n", 6, "memories to add per request")
+	noSave := fs.Bool("no-save", false, "don't save facts you state in chats")
+	if _, err := parse(fs, args); err != nil {
+		return err
+	}
+	a, err := open()
+	if err != nil {
+		return err
+	}
+	parseURL := func(name, raw string) (*url.URL, error) {
+		if !strings.Contains(raw, "://") {
+			raw = "http://" + raw
+		}
+		u, err := url.Parse(strings.TrimRight(raw, "/"))
+		if err != nil || u.Host == "" {
+			return nil, fmt.Errorf("bad --%s address %q", name, raw)
+		}
+		return u, nil
+	}
+	ol := *ollamaURL
+	if ol == "" {
+		ol = a.ollama.Host
+	}
+	oa := *openaiURL
+	if oa == "" {
+		oa = ol
+	}
+	targets := map[string]*url.URL{}
+	for name, raw := range map[string]string{"ollama": ol, "openai": oa, "anthropic": *anthropicURL} {
+		u, err := parseURL(name, raw)
+		if err != nil {
+			return err
+		}
+		targets[name] = u
+	}
+	p := &proxy.Proxy{
+		Store: a.store, Engine: a.engine,
+		Ollama: targets["ollama"], OpenAI: targets["openai"], Anthropic: targets["anthropic"],
+		Limit: *limit, Save: !*noSave,
+		Log: log.New(os.Stderr, "woolly proxy: ", 0),
+	}
+	ln, err := net.Listen("tcp", *addr)
+	if err != nil {
+		return fmt.Errorf("can't start the proxy on %s: %w", *addr, err)
+	}
+	host := strings.TrimPrefix(*addr, "http://")
+	fmt.Fprintf(os.Stderr, `Woolly proxy on http://%s
+
+  Ollama:     OLLAMA_HOST=%s ollama run llama3.2
+  OpenAI:     set your app's base URL to http://%s/v1  (forwards to %s)
+  Anthropic:  set your app's base URL to http://%s  (forwards to %s)
+
+Memories are added to each chat. Facts you state are saved%s.
+`, host, host, host, targets["openai"], host, targets["anthropic"], map[bool]string{true: "", false: " (off: --no-save)"}[p.Save])
+	// No write timeout: model replies can stream for a long time.
+	srv := &http.Server{Handler: server.LocalOnly(p.Handler()), ReadHeaderTimeout: 10 * time.Second}
+	return srv.Serve(ln)
 }
 
 func cmdMCP(args []string) error {

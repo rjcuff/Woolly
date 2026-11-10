@@ -193,7 +193,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 		writeJSON(w, http.StatusOK, map[string]any{"kept": kept, "superseded": orEmpty(replaced)})
 	})
 
-	return localOnly(requireToken(token, mux))
+	return LocalOnly(requireToken(token, mux))
 }
 
 // Serve listens on addr until the server fails.
@@ -216,9 +216,9 @@ func ServeListener(ln net.Listener, h http.Handler) error {
 	return srv.Serve(ln)
 }
 
-// localOnly blocks requests that a web page could make on the user's behalf:
+// LocalOnly blocks requests that a web page could make on the user's behalf:
 // a non-local Host header (DNS rebinding) or a cross-site browser Origin.
-func localOnly(next http.Handler) http.Handler {
+func LocalOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !isLocalHost(r.Host) {
 			writeError(w, http.StatusForbidden, "woolly only accepts requests addressed to localhost")
