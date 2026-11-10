@@ -1,0 +1,7 @@
+bin/
+dist/
+*.test
+.DS_Store
+web/node_modules/
+web/build/
+web/.react-router/

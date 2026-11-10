@@ -1,0 +1,41 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+html {
+  scrollbar-gutter: stable;
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+@theme {
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* The Woolly wordmark: chunky, playful, a little bouncy. */
+.wordmark {
+  font-family: 'Shrikhand', 'Cooper Black', Georgia, serif;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  color: var(--color-fd-foreground);
+  display: inline-block;
+  transform: rotate(-2deg);
+  padding-bottom: 0.08em;
+}
+
+/* Roomier docs: more air between blocks and headings. */
+.prose {
+  --tw-prose-body: var(--color-fd-foreground);
+  line-height: 1.75;
+}
+.prose :where(h2) {
+  margin-top: 2.6em;
+}
+.prose :where(h3) {
+  margin-top: 2em;
+}

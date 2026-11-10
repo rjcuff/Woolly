@@ -1,0 +1,150 @@
+// Package ollama is a minimal client for the parts of the Ollama API that
+// Woolly uses. Ollama is optional: without it Woolly falls back to keyword
+// search.
+package ollama
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
+	"time"
+)
+
+// DefaultEmbedModel is a small, fast embedding model (~270 MB).
+const DefaultEmbedModel = "nomic-embed-text"
+
+// Client talks to a local Ollama server.
+type Client struct {
+	Host       string
+	EmbedModel string
+	HTTP       *http.Client
+}
+
+// FromEnv builds a client from OLLAMA_HOST and WOOLLY_EMBED_MODEL.
+func FromEnv() *Client {
+	model := strings.TrimSpace(os.Getenv("WOOLLY_EMBED_MODEL"))
+	if model == "" {
+		model = DefaultEmbedModel
+	}
+	return &Client{
+		Host:       normalizeHost(os.Getenv("OLLAMA_HOST")),
+		EmbedModel: model,
+		HTTP:       &http.Client{Timeout: 2 * time.Minute},
+	}
+}
+
+func normalizeHost(h string) string {
+	h = strings.TrimSpace(h)
+	if h == "" {
+		return "http://127.0.0.1:11434"
+	}
+	if !strings.Contains(h, "://") {
+		h = "http://" + h
+	}
+	u, err := url.Parse(h)
+	if err != nil {
+		return "http://127.0.0.1:11434"
+	}
+	host, port := u.Hostname(), u.Port()
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		host = "127.0.0.1"
+	}
+	if port == "" {
+		port = "11434"
+	}
+	u.Host = net.JoinHostPort(host, port)
+	return strings.TrimRight(u.String(), "/")
+}
+
+// Model implements recall.Embedder.
+func (c *Client) Model() string { return c.EmbedModel }
+
+// Embed implements recall.Embedder using POST /api/embed.
+func (c *Client) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	var out struct {
+		Embeddings [][]float32 `json:"embeddings"`
+	}
+	err := c.do(ctx, http.MethodPost, "/api/embed", map[string]any{"model": c.EmbedModel, "input": texts}, &out)
+	if err != nil {
+		return nil, err
+	}
+	return out.Embeddings, nil
+}
+
+// Version returns the Ollama server version, or an error if it isn't running.
+func (c *Client) Version(ctx context.Context) (string, error) {
+	var out struct {
+		Version string `json:"version"`
+	}
+	if err := c.do(ctx, http.MethodGet, "/api/version", nil, &out); err != nil {
+		return "", err
+	}
+	return out.Version, nil
+}
+
+// HasModel reports whether a model has been pulled.
+func (c *Client) HasModel(ctx context.Context, name string) (bool, error) {
+	var out struct {
+		Models []struct {
+			Name  string `json:"name"`
+			Model string `json:"model"`
+		} `json:"models"`
+	}
+	if err := c.do(ctx, http.MethodGet, "/api/tags", nil, &out); err != nil {
+		return false, err
+	}
+	want := name
+	if !strings.Contains(want, ":") {
+		want += ":latest"
+	}
+	for _, m := range out.Models {
+		if m.Name == name || m.Name == want || m.Model == name || m.Model == want {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (c *Client) do(ctx context.Context, method, path string, body, out any) error {
+	var r io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+		r = bytes.NewReader(data)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, c.Host+path, r)
+	if err != nil {
+		return err
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return fmt.Errorf("ollama not reachable at %s: %w", c.Host, err)
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 64<<20))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		var e struct {
+			Error string `json:"error"`
+		}
+		if json.Unmarshal(data, &e) == nil && e.Error != "" {
+			return fmt.Errorf("ollama: %s", e.Error)
+		}
+		return fmt.Errorf("ollama: %s", resp.Status)
+	}
+	return json.Unmarshal(data, out)
+}

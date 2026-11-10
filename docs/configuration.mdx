@@ -1,0 +1,18 @@
+---
+title: Configuration
+description: Environment variables that change how Woolly runs.
+---
+
+Woolly needs no configuration. These settings are there if you want them.
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `WOOLLY_HOME` | `~/.woolly` | Where memories are stored |
+| `WOOLLY_HOST` | `127.0.0.1:11435` | Address for `woolly serve` |
+| `OLLAMA_HOST` | `127.0.0.1:11434` | Where to find Ollama |
+| `WOOLLY_EMBED_MODEL` | `nomic-embed-text` | Ollama model used for search by meaning |
+| `WOOLLY_NO_EMBED` | not set | Set to any value to turn Ollama off |
+
+## Syncing between computers
+
+Because memories are plain files, you can sync them with any tool you already use. Point `WOOLLY_HOME` at a synced folder, or keep `~/.woolly/memories` in a private git repo.

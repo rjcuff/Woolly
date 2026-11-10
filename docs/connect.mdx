@@ -1,0 +1,54 @@
+---
+title: Connect your apps
+description: Use Woolly from Claude Code, Claude Desktop, Cursor and any other MCP app.
+---
+
+Woolly speaks MCP, the Model Context Protocol. Any app that supports MCP can use it as its memory.
+
+## Claude Code
+
+```sh
+claude mcp add woolly -- woolly mcp
+```
+
+## Claude Desktop
+
+Open **Settings → Developer → Edit Config** and add Woolly:
+
+```json title="claude_desktop_config.json"
+{
+  "mcpServers": {
+    "woolly": { "command": "woolly", "args": ["mcp"] }
+  }
+}
+```
+
+Restart Claude Desktop.
+
+## Cursor
+
+Add the same block to `~/.cursor/mcp.json`:
+
+```json title="~/.cursor/mcp.json"
+{
+  "mcpServers": {
+    "woolly": { "command": "woolly", "args": ["mcp"] }
+  }
+}
+```
+
+<Callout title="Command not found?">
+  If the app can't find `woolly`, use the full path. Run `which woolly` to get it.
+</Callout>
+
+## What your AI can do
+
+| Tool | What it does |
+| --- | --- |
+| `remember` | Save a fact |
+| `recall` | Search your memories |
+| `list_memories` | List current memories |
+| `forget` | Delete a memory, only when you ask |
+| `resolve_conflict` | Keep one version of a disputed fact |
+
+Woolly also tells the AI to recall context at the start of a task, and to mark facts it guessed as guesses.

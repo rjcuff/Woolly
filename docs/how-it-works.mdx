@@ -1,0 +1,46 @@
+---
+title: How it works
+description: Where memories live, and how Woolly keeps them current.
+---
+
+## Memories are files
+
+Each memory is one Markdown file in `~/.woolly/memories`, with a short header on top:
+
+```md title="~/.woolly/memories/20261110-150029-4fe20388.md"
+---
+id: 20261110-150029-4fe20388
+key: user.location
+source: user
+status: active
+created_at: 2026-11-10T15:00:29Z
+---
+
+Moved to Denver in October
+```
+
+You can open, edit or delete these files yourself. Woolly picks up changes right away.
+
+## Keeping facts current
+
+Most memory tools keep everything forever, so your AI keeps bringing up things that stopped being true. Woolly handles change on purpose.
+
+| What happens | What Woolly does |
+| --- | --- |
+| You save the same thing twice | Keeps one copy and refreshes its date |
+| A new fact has the same `key` | Marks the old one superseded and hides it from search |
+| An AI contradicts something you said | Saves it as a conflict and keeps your version |
+
+## Who said it
+
+Every memory records where it came from. When two facts disagree, the more trusted source wins.
+
+1. **user** means you said it
+2. **import** means it came from another app's export
+3. **agent** means an AI inferred it
+
+Review disagreements with `woolly conflicts`, and keep the right one with `woolly resolve <id>`.
+
+## Search
+
+Woolly ranks memories by matching words, with a small built-in list of related words so a question like "where do I live" finds "moved to Denver". If [Ollama](/docs/ollama) is running, Woolly also matches by meaning.

@@ -1,0 +1,28 @@
+import type { Config } from '@react-router/dev/config';
+import { glob } from 'node:fs/promises';
+import { createGetUrl, getSlugs } from 'fumadocs-core/source';
+import { getPageImageUrl } from './app/lib/shared';
+
+const getUrl = createGetUrl('/docs');
+
+export default {
+  ssr: true,
+  async prerender({ getStaticPaths }) {
+    const paths: string[] = [];
+    const excluded: string[] = ['/api/search'];
+    paths.push('/sitemap.xml');
+
+    for (const path of getStaticPaths()) {
+      if (!excluded.includes(path)) paths.push(path);
+    }
+
+    for await (const entry of glob('**/*.mdx', { cwd: '../docs' })) {
+      const slugs = getSlugs(entry);
+
+      paths.push(getUrl(slugs));
+      paths.push(getPageImageUrl({ slugs }).url);
+    }
+
+    return paths;
+  },
+} satisfies Config;

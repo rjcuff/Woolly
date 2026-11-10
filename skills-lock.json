@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "easeui": {
+      "source": "rjcuff/easeui",
+      "sourceType": "github",
+      "skillPath": "skills/easeui/SKILL.md",
+      "computedHash": "7f1e0faf1cde213969904de2a6e051513a41e2b29eb0e8c2ad3bdec0c5ae70f7"
+    }
+  }
+}

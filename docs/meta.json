@@ -1,0 +1,17 @@
+{
+  "title": "Woolly",
+  "pages": [
+    "---Get started---",
+    "index",
+    "quickstart",
+    "connect",
+    "---Guides---",
+    "how-it-works",
+    "ollama",
+    "---Reference---",
+    "cli",
+    "api",
+    "configuration",
+    "faq"
+  ]
+}
