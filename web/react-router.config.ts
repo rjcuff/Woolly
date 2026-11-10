@@ -13,6 +13,7 @@ export default {
     const paths = new Set<string>(getStaticPaths());
     paths.add('/api/search');
     paths.add('/sitemap.xml');
+    paths.add('/og/docs/profile.png');
 
     for await (const entry of glob('**/*.mdx', { cwd: '../docs' })) {
       const slugs = getSlugs(entry);

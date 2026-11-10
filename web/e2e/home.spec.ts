@@ -42,7 +42,7 @@ test('link previews point at the Woolly image', async ({ page, request }) => {
 });
 
 test('sitemap, robots and install script are served', async ({ request }) => {
-  for (const path of ['/sitemap.xml', '/robots.txt', '/install.sh', '/install.ps1']) {
+  for (const path of ['/sitemap.xml', '/robots.txt', '/install.sh', '/install.ps1', '/og/docs/profile.png']) {
     expect((await request.get(path)).status(), path).toBe(200);
   }
   expect(await (await request.get('/sitemap.xml')).text()).toContain('https://usewoolly.com/docs/quickstart');
