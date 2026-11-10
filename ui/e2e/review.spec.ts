@@ -1,0 +1,111 @@
+import { expect, type Page, test } from '@playwright/test';
+
+const unique = () => Math.random().toString(36).slice(2, 8);
+
+async function add(page: Page, text: string, key?: string) {
+  await page.getByLabel('New memory').fill(text);
+  if (key) {
+    const more = page.getByRole('button', { name: 'Add a key or tags' });
+    if (await more.isVisible()) await more.click();
+    await page.getByLabel('Key', { exact: true }).fill(key);
+  }
+  const saved = page.waitForResponse((r) => r.url().endsWith('/api/remember'));
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await saved;
+}
+
+test.beforeEach(async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Woolly', { exact: true })).toBeVisible();
+});
+
+test('adds a memory and finds it with search', async ({ page }) => {
+  const text = `I like hiking ${unique()}`;
+  await add(page, text);
+  await expect(page.getByRole('status')).toHaveText(/Saved/);
+  await expect(page.getByText(text)).toBeVisible();
+
+  await page.getByRole('searchbox').fill('hiking');
+  await expect(page.getByText(text)).toBeVisible();
+});
+
+test('refuses to save a secret', async ({ page }) => {
+  await add(page, 'My OpenAI key is sk-proj-abcdefghijklmnopqrstuvwxyz123456');
+  await expect(page.getByRole('alert')).toContainText('an OpenAI API key');
+  await expect(page.getByText('sk-proj-abcdefghijklmnopqrstuvwxyz123456')).toHaveCount(0);
+});
+
+test('edits a memory', async ({ page }) => {
+  const id = unique();
+  await add(page, `Drinks coffee ${id}`);
+  const row = page.getByRole('listitem').filter({ hasText: `Drinks coffee ${id}` });
+  await row.getByRole('button', { name: 'Edit' }).click();
+  await page.getByRole('textbox', { name: 'Edit memory' }).fill(`Drinks tea now ${id}`);
+  await page.getByRole('listitem').getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText(`Drinks tea now ${id}`)).toBeVisible();
+  await expect(page.getByText(`Drinks coffee ${id}`)).toHaveCount(0);
+});
+
+test('forget asks before deleting', async ({ page }) => {
+  const text = `Temporary note ${unique()}`;
+  await add(page, text);
+  const row = page.getByRole('listitem').filter({ hasText: text });
+  await row.getByRole('button', { name: 'Forget' }).click();
+  await row.getByRole('button', { name: 'Delete for good' }).click();
+  await expect(page.getByText(text)).toHaveCount(0);
+});
+
+test('a new fact with the same key replaces the old one', async ({ page }) => {
+  const key = `user.city_${unique()}`;
+  await add(page, 'Lives in Austin', key);
+  await add(page, 'Lives in Denver', key);
+  const current = page.getByRole('listitem').filter({ hasText: key });
+  await expect(current).toHaveCount(1);
+  await expect(current).toContainText('Lives in Denver');
+
+  await page.getByRole('button', { name: 'History' }).click();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Lives in Austin' }).first()).toContainText('Replaced');
+});
+
+test('resolves a conflict', async ({ page, request }) => {
+  const key = `code.indent_${unique()}`;
+  await request.post('/api/remember', { data: { content: 'Prefers tabs', key, source: 'user' } });
+  await request.post('/api/remember', { data: { content: 'Prefers spaces', key, source: 'agent' } });
+  await page.reload();
+
+  await page.getByRole('button', { name: /Conflicts/ }).click();
+  const row = page.getByRole('listitem').filter({ hasText: key });
+  await expect(row).toContainText('Prefers spaces');
+  await expect(row).toContainText('Prefers tabs');
+  await row.getByRole('button', { name: 'Keep this' }).click();
+  await expect(page.getByRole('listitem').filter({ hasText: key })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Memories' }).click();
+  await expect(page.getByRole('listitem').filter({ hasText: key })).toContainText('Prefers spaces');
+});
+
+test('shows and copies the profile', async ({ page, context, browserName }) => {
+  test.skip(browserName !== 'chromium', 'clipboard permissions are Chromium only');
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const text = `I prefer short answers ${unique()}`;
+  await add(page, text);
+  await page.getByRole('button', { name: 'Profile' }).click();
+  await expect(page.locator('pre')).toContainText(text);
+  await page.getByRole('button', { name: 'Copy profile' }).click();
+  await expect(page.getByRole('status')).toHaveText(/Copied/);
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('# About me');
+});
+
+test('no horizontal scrolling', async ({ page }) => {
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+});
+
+test('page loads nothing from the internet', async ({ page }) => {
+  const external: string[] = [];
+  page.on('request', (r) => {
+    if (!r.url().startsWith('http://127.0.0.1')) external.push(r.url());
+  });
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+  expect(external).toEqual([]);
+});

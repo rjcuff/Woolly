@@ -9,9 +9,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net"
+	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -19,6 +23,7 @@ import (
 	"github.com/rjcuff/wooly/internal/mcp"
 	"github.com/rjcuff/wooly/internal/memory"
 	"github.com/rjcuff/wooly/internal/ollama"
+	"github.com/rjcuff/wooly/internal/profile"
 	"github.com/rjcuff/wooly/internal/recall"
 	"github.com/rjcuff/wooly/internal/server"
 )
@@ -28,15 +33,17 @@ var version = "0.1.0-dev"
 const usage = `Woolly: local memory for your AI tools.
 
 Usage:
-  woolly remember <text> [--key k] [--tags a,b] [--source user|agent|import]
+  woolly remember <text> [--key k] [--tags a,b] [--source user|agent|import] [--allow-secret]
   woolly recall <query> [-n 5] [--all] [--json]
   woolly list [--all] [--json]
   woolly show <id>
   woolly forget <id>
   woolly import <chatgpt|claude> <export.zip> [--dry-run]
+  woolly profile [--json]       summary of everything Woolly knows about you
   woolly conflicts
   woolly resolve <id>          keep this memory as the current fact for its key
-  woolly serve                 run the local HTTP API (default 127.0.0.1:11435)
+  woolly ui                    open the review page in your browser
+  woolly serve                 run the local HTTP API and review page (default 127.0.0.1:11435)
   woolly mcp                   run as an MCP server on stdio (for Claude, Cursor, ...)
   woolly doctor                check your setup
   woolly version
@@ -79,10 +86,14 @@ func run(args []string) error {
 		return cmdForget(rest)
 	case "import":
 		return cmdImport(rest)
+	case "profile":
+		return cmdProfile(rest)
 	case "conflicts":
 		return cmdConflicts(rest)
 	case "resolve":
 		return cmdResolve(rest)
+	case "ui":
+		return cmdUI(rest)
 	case "serve":
 		return cmdServe(rest)
 	case "mcp":
@@ -164,6 +175,7 @@ func cmdRemember(args []string) error {
 	tags := fs.String("tags", "", "comma-separated tags")
 	source := fs.String("source", "user", "who said it: user, agent or import")
 	asJSON := fs.Bool("json", false, "print JSON")
+	allowSecret := fs.Bool("allow-secret", false, "save even if it looks like a password or API key")
 	pos, err := parse(fs, args)
 	if err != nil {
 		return err
@@ -180,7 +192,13 @@ func cmdRemember(args []string) error {
 	if err != nil {
 		return err
 	}
-	res, err := a.store.Remember(memory.RememberInput{Content: text, Key: *key, Tags: []string{*tags}, Source: src})
+	res, err := a.store.Remember(memory.RememberInput{
+		Content: text, Key: *key, Tags: []string{*tags}, Source: src, AllowSensitive: *allowSecret,
+	})
+	var sensitive *memory.SensitiveError
+	if errors.As(err, &sensitive) {
+		return fmt.Errorf("%v. If you're sure, add --allow-secret", err)
+	}
 	if err != nil {
 		return err
 	}
@@ -326,11 +344,16 @@ func cmdImport(args []string) error {
 	if err != nil {
 		return err
 	}
-	var added, dupes, conflicts int
+	var added, dupes, conflicts, blocked int
 	for _, c := range found {
 		res, err := a.store.Remember(memory.RememberInput{
 			Content: c.Content, Key: c.Key, Tags: append([]string{provider}, c.Tags...), Source: memory.SourceImport,
 		})
+		var sensitive *memory.SensitiveError
+		if errors.As(err, &sensitive) {
+			blocked++
+			continue
+		}
 		if err != nil {
 			return err
 		}
@@ -344,9 +367,34 @@ func cmdImport(args []string) error {
 		}
 	}
 	fmt.Printf("Imported %d new memories (%d already known).\n", added, dupes)
+	if blocked > 0 {
+		fmt.Printf("Skipped %d that looked like passwords or keys.\n", blocked)
+	}
 	if conflicts > 0 {
 		fmt.Printf("%d disagree with things you told Woolly directly. Review them with: woolly conflicts\n", conflicts)
 	}
+	return nil
+}
+
+func cmdProfile(args []string) error {
+	fs := newFlags("profile")
+	asJSON := fs.Bool("json", false, "print JSON")
+	if _, err := parse(fs, args); err != nil {
+		return err
+	}
+	a, err := open()
+	if err != nil {
+		return err
+	}
+	mems, err := a.store.List(false)
+	if err != nil {
+		return err
+	}
+	p := profile.Build(mems)
+	if *asJSON {
+		return printJSON(p)
+	}
+	fmt.Print(p.Markdown())
 	return nil
 }
 
@@ -405,6 +453,46 @@ func cmdServe(args []string) error {
 	}
 	fmt.Fprintf(os.Stderr, "Woolly %s listening on http://%s (memories: %s)\n", version, *addr, a.store.Dir())
 	return server.Serve(*addr, server.Handler(a.store, a.engine, version))
+}
+
+// cmdUI opens the review page, starting the server first if it isn't running.
+func cmdUI(args []string) error {
+	fs := newFlags("ui")
+	addr := fs.String("addr", envOr("WOOLLY_HOST", server.DefaultAddr), "listen address")
+	if _, err := parse(fs, args); err != nil {
+		return err
+	}
+	url := "http://" + *addr + "/"
+	client := &http.Client{Timeout: time.Second}
+	if res, err := client.Get(url + "api/version"); err == nil {
+		res.Body.Close()
+		fmt.Println("Opening", url)
+		return openBrowser(url)
+	}
+	a, err := open()
+	if err != nil {
+		return err
+	}
+	ln, err := net.Listen("tcp", *addr)
+	if err != nil {
+		return fmt.Errorf("can't start the review page on %s: %w", *addr, err)
+	}
+	fmt.Printf("Woolly review page: %s\nPress Ctrl+C to stop.\n", url)
+	_ = openBrowser(url)
+	return server.ServeListener(ln, server.Handler(a.store, a.engine, version))
+}
+
+func openBrowser(url string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		cmd = exec.Command("xdg-open", url)
+	}
+	return cmd.Start()
 }
 
 func cmdMCP(args []string) error {

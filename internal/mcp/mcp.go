@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/rjcuff/wooly/internal/memory"
+	"github.com/rjcuff/wooly/internal/profile"
 	"github.com/rjcuff/wooly/internal/recall"
 )
 
@@ -22,6 +23,8 @@ var supportedVersions = []string{"2025-11-25", "2025-06-18", "2025-03-26", "2024
 const instructions = `Woolly is the user's personal, local memory, shared across all of their AI tools.
 At the start of a task, call "recall" with a short query about the topic to load relevant context.
 When you learn a durable fact (a preference, a decision, a fact about the user or their projects), call "remember".
+Call "get_profile" once at the start of a conversation for a summary of the user.
+Never save passwords, API keys or other secrets. Woolly will refuse them.
 Use a stable "key" (e.g. "user.location", "project.acme.database") for facts that can change, so newer facts replace older ones.
 Set source to "user" only when the user said it directly; use "agent" for things you inferred.`
 
@@ -185,6 +188,12 @@ var tools = []map[string]any{
 		}, "query"),
 	},
 	{
+		"name":        "get_profile",
+		"title":       "Get profile",
+		"description": "Get a short summary of everything currently known about the user: facts, preferences and notes. Good to call once at the start of a conversation.",
+		"inputSchema": obj(map[string]any{}),
+	},
+	{
 		"name":        "list_memories",
 		"title":       "List memories",
 		"description": "List the user's memories, newest first.",
@@ -256,6 +265,13 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			b.WriteString(Line(r.Memory) + "\n")
 		}
 		return b.String(), nil
+
+	case "get_profile":
+		mems, err := s.Store.List(false)
+		if err != nil {
+			return "", err
+		}
+		return profile.Build(mems).Markdown(), nil
 
 	case "list_memories":
 		var a struct {

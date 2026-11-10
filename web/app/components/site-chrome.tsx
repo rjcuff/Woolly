@@ -28,7 +28,7 @@ export function SiteHeader() {
 export function SiteFooter() {
   const year = new Date().getFullYear();
   return (
-    <footer className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-fd-border py-5 text-sm text-fd-muted-foreground">
+    <footer className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-5 text-xs text-fd-muted-foreground">
       <span>© {year} Woolly™</span>
       <nav aria-label="Footer" className="flex items-center gap-5">
         <Link to="/privacy" className="hover:text-fd-foreground">

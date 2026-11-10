@@ -11,9 +11,11 @@ description: Everything the woolly command can do.
 | `woolly show <id>` | Show one memory in full |
 | `woolly forget <id>` | Delete a memory |
 | `woolly import <chatgpt\|claude> <file>` | Import facts from your chat history |
+| `woolly profile` | Summary of everything Woolly knows about you |
+| `woolly ui` | Open the review page in your browser |
 | `woolly conflicts` | Review facts that disagree |
 | `woolly resolve <id>` | Keep this version as the current fact |
-| `woolly serve` | Run the local HTTP API |
+| `woolly serve` | Run the local HTTP API and review page |
 | `woolly mcp` | Run as an MCP server for AI apps |
 | `woolly doctor` | Check your setup |
 | `woolly version` | Print the version |
@@ -31,6 +33,7 @@ woolly remember "Moved to Denver in October" --key user.location --tags home
 | `--key` | Names the fact so a newer one can replace it |
 | `--tags` | Comma-separated tags |
 | `--source` | `user` (default), `agent` or `import` |
+| `--allow-secret` | Save even if it looks like a password or API key |
 | `--json` | Print the result as JSON |
 
 ## recall
@@ -56,6 +59,26 @@ woolly import chatgpt ~/Downloads/export.zip --dry-run
 | `--dry-run` | Show what would be imported without saving |
 
 See [Import your history](/docs/import).
+
+## profile
+
+```sh
+woolly profile
+```
+
+```md
+# About me
+
+## Facts
+
+- Moved to Denver in October
+
+## Preferences
+
+- I prefer short answers
+```
+
+Add `--json` for JSON.
 
 ## list
 

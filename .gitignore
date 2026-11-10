@@ -7,3 +7,6 @@ web/build/
 web/.react-router/
 web/test-results/
 web/playwright-report/
+ui/node_modules/
+ui/test-results/
+ui/playwright-report/

@@ -9,10 +9,31 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/rjcuff/wooly/internal/secrets"
 )
 
 // ErrNotFound is returned when no memory matches an ID.
 var ErrNotFound = errors.New("memory not found")
+
+// SensitiveError is returned when a memory looks like it contains a secret.
+type SensitiveError struct {
+	What string // e.g. "an OpenAI API key"
+}
+
+func (e *SensitiveError) Error() string {
+	return "not saved: this looks like it contains " + e.What + ". Woolly doesn't store secrets"
+}
+
+func checkSensitive(text string, allow bool) error {
+	if allow {
+		return nil
+	}
+	if found := secrets.Scan(text); len(found) > 0 {
+		return &SensitiveError{What: secrets.Describe(found)}
+	}
+	return nil
+}
 
 // Store keeps memories as Markdown files in one directory. It caches them in
 // memory and reloads automatically when files change on disk, so a running
@@ -165,6 +186,8 @@ type RememberInput struct {
 	Key     string   // optional stable slot, e.g. "user.location"
 	Tags    []string // optional
 	Source  Source   // defaults to SourceUser
+	// AllowSensitive saves the memory even if it looks like it holds a secret.
+	AllowSensitive bool
 }
 
 // RememberResult reports what Remember did.
@@ -194,6 +217,9 @@ func (s *Store) Remember(in RememberInput) (*RememberResult, error) {
 	}
 	if src.Rank() == 0 {
 		return nil, fmt.Errorf("unknown source %q (use user, import or agent)", src)
+	}
+	if err := checkSensitive(content, in.AllowSensitive); err != nil {
+		return nil, err
 	}
 	key := NormalizeKey(in.Key)
 	tags := NormalizeTags(in.Tags)
@@ -317,6 +343,53 @@ func (s *Store) filter(keep func(*Memory) bool) ([]Memory, error) {
 		return out[i].ID > out[j].ID
 	})
 	return out, nil
+}
+
+// UpdateInput changes an existing memory. Nil fields are left alone.
+type UpdateInput struct {
+	Content        *string
+	Key            *string
+	Tags           *[]string
+	AllowSensitive bool
+}
+
+// Update edits a memory in place. If the memory is current and has a key,
+// it becomes the current fact for that key.
+func (s *Store) Update(id string, in UpdateInput) (Memory, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.refresh(); err != nil {
+		return Memory{}, err
+	}
+	m, err := s.find(id)
+	if err != nil {
+		return Memory{}, err
+	}
+	if in.Content != nil {
+		c := strings.TrimSpace(*in.Content)
+		if c == "" {
+			return Memory{}, errors.New("memory content is empty")
+		}
+		if err := checkSensitive(c, in.AllowSensitive); err != nil {
+			return Memory{}, err
+		}
+		m.Content = c
+	}
+	if in.Key != nil {
+		m.Key = NormalizeKey(*in.Key)
+	}
+	if in.Tags != nil {
+		m.Tags = NormalizeTags(*in.Tags)
+	}
+	m.UpdatedAt = time.Now().UTC()
+	if m.Status == StatusActive && m.Key != "" {
+		if _, err := s.resolveLocked(m, m.UpdatedAt); err != nil {
+			return Memory{}, err
+		}
+	} else if err := s.write(m); err != nil {
+		return Memory{}, err
+	}
+	return m.clone(), nil
 }
 
 // Forget permanently deletes a memory's file.

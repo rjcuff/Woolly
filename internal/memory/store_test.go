@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -124,5 +125,42 @@ func TestPicksUpHandEditsAndForget(t *testing.T) {
 	}
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Fatal("file should be deleted")
+	}
+}
+
+func TestBlocksSecrets(t *testing.T) {
+	s := newStore(t)
+	_, err := s.Remember(RememberInput{Content: "My OpenAI key is sk-proj-abcdefghijklmnopqrstuvwxyz123456"})
+	var se *SensitiveError
+	if !errors.As(err, &se) || !strings.Contains(err.Error(), "an OpenAI API key") {
+		t.Fatalf("expected SensitiveError, got %v", err)
+	}
+	if all, _ := s.List(true); len(all) != 0 {
+		t.Fatal("nothing should be saved")
+	}
+	if _, err := s.Remember(RememberInput{Content: "Test card 4242 4242 4242 4242", AllowSensitive: true}); err != nil {
+		t.Fatalf("AllowSensitive should save: %v", err)
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	s := newStore(t)
+	a, _ := s.Remember(RememberInput{Content: "Lives in Austin", Key: "user.location"})
+	b, _ := s.Remember(RememberInput{Content: "Has a dog"})
+	newText, newKey := "Has a dog named Biscuit", "user.pet"
+	got, err := s.Update(b.Memory.ID, UpdateInput{Content: &newText, Key: &newKey})
+	if err != nil || got.Content != newText || got.Key != "user.pet" {
+		t.Fatalf("update: %+v %v", got, err)
+	}
+	secret := "password is hunter22"
+	if _, err := s.Update(a.Memory.ID, UpdateInput{Content: &secret}); err == nil {
+		t.Fatal("expected secret to be refused on update")
+	}
+	// Giving a memory an existing key makes it the current fact.
+	loc := "user.location"
+	c, _ := s.Remember(RememberInput{Content: "Moved to Denver"})
+	s.Update(c.Memory.ID, UpdateInput{Key: &loc})
+	if old, _ := s.Get(a.Memory.ID); old.Status != StatusSuperseded {
+		t.Fatalf("old location should be superseded, got %s", old.Status)
 	}
 }

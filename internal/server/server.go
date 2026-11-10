@@ -5,7 +5,6 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/rjcuff/wooly/internal/memory"
+	"github.com/rjcuff/wooly/internal/profile"
 	"github.com/rjcuff/wooly/internal/recall"
 )
 
@@ -23,9 +23,7 @@ const DefaultAddr = "127.0.0.1:11435"
 func Handler(store *memory.Store, engine *recall.Engine, version string) http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Woolly is running")
-	})
+	mux.Handle("GET /", uiHandler())
 	mux.HandleFunc("GET /api/version", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"version": version})
 	})
@@ -96,6 +94,38 @@ func Handler(store *memory.Store, engine *recall.Engine, version string) http.Ha
 		writeJSON(w, http.StatusOK, m)
 	})
 
+	mux.HandleFunc("PATCH /api/memories/{id}", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Content *string   `json:"content"`
+			Key     *string   `json:"key"`
+			Tags    *[]string `json:"tags"`
+		}
+		if !readJSON(w, r, &req) {
+			return
+		}
+		m, err := store.Update(r.PathValue("id"), memory.UpdateInput{Content: req.Content, Key: req.Key, Tags: req.Tags})
+		if err != nil {
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, m)
+	})
+
+	mux.HandleFunc("GET /api/profile", func(w http.ResponseWriter, r *http.Request) {
+		mems, err := store.List(false)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		p := profile.Build(mems)
+		if r.URL.Query().Get("format") == "markdown" {
+			w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+			_, _ = w.Write([]byte(p.Markdown()))
+			return
+		}
+		writeJSON(w, http.StatusOK, p)
+	})
+
 	mux.HandleFunc("DELETE /api/memories/{id}", func(w http.ResponseWriter, r *http.Request) {
 		m, err := store.Forget(r.PathValue("id"))
 		if err != nil {
@@ -134,14 +164,22 @@ func Handler(store *memory.Store, engine *recall.Engine, version string) http.Ha
 
 // Serve listens on addr until the server fails.
 func Serve(addr string, h http.Handler) error {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+	return ServeListener(ln, h)
+}
+
+// ServeListener serves on an existing listener until the server fails.
+func ServeListener(ln net.Listener, h http.Handler) error {
 	srv := &http.Server{
-		Addr:              addr,
 		Handler:           h,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      2 * time.Minute,
 	}
-	return srv.ListenAndServe()
+	return srv.Serve(ln)
 }
 
 // localOnly blocks requests that a web page could make on the user's behalf:

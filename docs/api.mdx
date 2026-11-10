@@ -9,7 +9,7 @@ Start the server:
 woolly serve
 ```
 
-It listens on `127.0.0.1:11435`, right next to Ollama's `11434`. It only accepts requests from your own machine and blocks requests from websites.
+It also serves the review page at `http://127.0.0.1:11435`. It listens on `127.0.0.1:11435`, right next to Ollama's `11434`. It only accepts requests from your own machine and blocks requests from websites.
 
 ## Remember
 
@@ -42,7 +42,9 @@ curl -X POST localhost:11435/api/recall \
 | `POST` | `/api/recall` | `query`, plus optional `limit`, `include_all` |
 | `GET` | `/api/memories` | Add `?all=1` for everything |
 | `GET` | `/api/memories/{id}` | |
+| `PATCH` | `/api/memories/{id}` | Any of `content`, `key`, `tags` |
 | `DELETE` | `/api/memories/{id}` | |
+| `GET` | `/api/profile` | Add `?format=markdown` for Markdown |
 | `GET` | `/api/conflicts` | |
 | `POST` | `/api/resolve` | `keep_id` |
 | `GET` | `/api/version` | |

@@ -8,6 +8,7 @@ Woolly is a memory for your AI tools that runs on your own computer. Claude, Cur
 - Every memory is a `.md` file in `~/.woolly/memories`.
 - When a fact changes, the new one replaces the old one.
 - If an AI contradicts something you said, your version stays and the AI's is flagged for review.
+- Passwords, API keys and card numbers are never saved.
 - Works with Claude Code, Claude Desktop, Cursor and any other MCP app.
 - Ollama is optional. With it, search also matches by meaning.
 
@@ -29,6 +30,8 @@ go install github.com/rjcuff/wooly/cmd/woolly@latest
 woolly remember "I prefer tabs over spaces" --key code.indent
 woolly remember "Moved to Denver in October" --key user.location
 woolly recall "where do I live"
+woolly profile      # summary of what Woolly knows about you
+woolly ui           # review and edit memories in your browser
 ```
 
 Bring in what you've already told ChatGPT or Claude:
@@ -59,6 +62,7 @@ Read them at [usewooly.com/docs](https://usewooly.com/docs) or in the [`docs`](d
 | --- | --- |
 | `cmd/woolly`, `internal` | The Woolly program, written in Go |
 | `docs` | Documentation in MDX |
+| `ui` | The review page, built into the binary |
 | `web` | Website and docs site |
 | `scripts` | The install script |
 

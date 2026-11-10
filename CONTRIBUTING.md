@@ -24,6 +24,17 @@ Try your build without touching your real memories:
 WOOLLY_HOME=/tmp/woolly-dev ./bin/woolly remember "test memory"
 ```
 
+### Review page
+
+The page `woolly ui` opens lives in `ui/` (React and TypeScript). Its build goes into `internal/server/ui` and is embedded in the binary, so commit the build output.
+
+```sh
+cd ui
+npm install
+npm run dev     # proxies API calls to a running woolly serve
+make ui         # from the repo root, rebuild before committing
+```
+
 ### Website and docs
 
 ```sh
