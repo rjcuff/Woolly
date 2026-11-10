@@ -22,6 +22,12 @@ Woolly is a memory for your AI tools that runs on your own computer. Claude, Cur
 curl -fsSL https://usewoolly.com/install.sh | sh
 ```
 
+With Homebrew:
+
+```sh
+brew install rjcuff/tap/woolly
+```
+
 On Windows, in PowerShell:
 
 ```powershell
