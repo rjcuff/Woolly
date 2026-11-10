@@ -1,0 +1,100 @@
+---
+title: How MCP works
+description: What happens when Claude, Cursor or another AI app uses Woolly.
+---
+
+MCP, the Model Context Protocol, is a standard way for AI apps to use outside tools. Woolly is one of those tools. Once you [connect an app](/docs/connect), the AI can save and look up memories on its own.
+
+## What happens, step by step
+
+<Steps>
+<Step>
+
+### The app starts Woolly
+
+When you open Claude Code, Claude Desktop or Cursor, the app runs `woolly mcp` in the background. You don't start anything yourself, and `woolly serve` doesn't need to be running.
+
+</Step>
+<Step>
+
+### They introduce themselves
+
+The app asks Woolly what it can do. Woolly answers with its list of tools and a short note telling the AI how to use them, like "recall context at the start of a task" and "never save secrets".
+
+</Step>
+<Step>
+
+### The AI decides when to use a tool
+
+While you chat, the AI reads the tool descriptions and calls one when it helps. Many apps ask your permission the first time a tool is used.
+
+</Step>
+<Step>
+
+### Woolly does the work
+
+Woolly reads or writes the memory files in `~/.woolly` and sends back a short text answer, which the AI uses in its reply.
+
+</Step>
+</Steps>
+
+## An example
+
+You tell Claude:
+
+> I moved to Denver last month.
+
+Claude calls the `remember` tool:
+
+```json
+{ "content": "Moved to Denver", "key": "user.location", "source": "user" }
+```
+
+Woolly saves it, marks your old location as replaced, and answers:
+
+```txt
+Remembered: Moved to Denver (key: user.location; source: user)
+Replaced older memory: Lives in Austin
+```
+
+A week later, in Cursor, you ask for a weather script. Cursor calls `recall` with "user location", gets "Moved to Denver", and uses it.
+
+## The tools
+
+| Tool | When the AI uses it |
+| --- | --- |
+| `recall` | To look up anything relevant to what you're working on |
+| `get_profile` | Once at the start of a conversation, for a summary of you |
+| `remember` | When you share a fact, preference or decision worth keeping |
+| `list_memories` | When you ask what Woolly knows |
+| `forget` | Only when you ask it to delete something |
+| `resolve_conflict` | Only when you confirm which version of a fact is right |
+
+## Who said it
+
+Every memory records where it came from. The AI marks a fact as `user` only when you said it directly, and as `agent` when it inferred it. If an AI's guess disagrees with something you said, your version stays current and the guess is saved as a conflict. Review those with `woolly conflicts` or on the [review page](/docs/review).
+
+## Sharing between apps
+
+Each connected app runs its own copy of `woolly mcp`, but they all read and write the same files. Woolly notices changes right away, so a memory saved in Claude is there for Cursor a second later.
+
+## Privacy
+
+The app and Woolly talk directly on your computer, not over the internet. Woolly has no servers. What the AI app itself does with the answers it gets is covered by that app's privacy policy.
+
+## Troubleshooting
+
+<Accordions>
+<Accordion title="The AI never uses Woolly">
+Check that the app lists Woolly as connected. In Claude Code, run `claude mcp list`. In Claude Desktop and Cursor, look in the app's MCP or tools settings. Restart the app after changing its config.
+</Accordion>
+<Accordion title="The app says it can't find woolly">
+Apps don't always see the same `PATH` as your terminal. Use the full path in the config. Run `which woolly` to get it.
+</Accordion>
+<Accordion title="I want to see what the AI saved">
+Run `woolly list`, or open the [review page](/docs/review) with `woolly ui`.
+</Accordion>
+<Accordion title="The AI saved something wrong">
+Edit or forget it on the review page, or run `woolly forget <id>`.
+</Accordion>
+</Accordions>
