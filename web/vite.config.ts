@@ -8,4 +8,9 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  // Pre-bundle these up front. Otherwise Vite discovers them mid-session and
+  // reloads the page, which can leave an open tab with dead buttons.
+  optimizeDeps: {
+    include: ['clsx', 'lucide-react', 'motion/react', 'next-themes', 'tailwind-merge'],
+  },
 });

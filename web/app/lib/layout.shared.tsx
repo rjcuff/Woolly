@@ -8,10 +8,6 @@ export function baseOptions(): BaseLayoutProps {
       title: <Wordmark className="text-[30px]" />,
     },
     githubUrl,
-    links: [
-      { text: 'Download', url: '/docs/quickstart', active: 'none' },
-      { text: 'Docs', url: '/docs', active: 'nested-url' },
-    ],
     slots: {
       themeSwitch: SiteThemeToggle,
     },

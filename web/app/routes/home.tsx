@@ -1,6 +1,6 @@
 import type { Route } from './+types/home';
 import { Link } from 'react-router';
-import { SiteThemeToggle, Wordmark } from '@/components/brand';
+import { GitHubIcon, SiteThemeToggle, Wordmark } from '@/components/brand';
 import { seo } from '@/lib/seo';
 import { appName, githubUrl, siteDescription, tagline } from '@/lib/shared';
 
@@ -27,11 +27,12 @@ export default function Home() {
     <div className="flex h-dvh flex-col overflow-hidden px-[max(20px,env(safe-area-inset-left))]">
       <header className="flex items-center justify-between gap-6 py-5">
         <Link to="/" aria-label="Woolly home">
-          <Wordmark className="text-[34px]" />
+          <Wordmark className="text-[28px] sm:text-[34px]" />
         </Link>
-        <nav aria-label="Main" className="flex items-center gap-5 text-[17px] sm:gap-8 sm:text-lg">
-          <a href={githubUrl} className="hover:text-fd-muted-foreground">
-            GitHub
+        <nav aria-label="Main" className="flex items-center gap-4 text-[16px] sm:gap-8 sm:text-lg">
+          <a href={githubUrl} aria-label="GitHub" className="hover:text-fd-muted-foreground">
+            <GitHubIcon className="size-5 sm:hidden" />
+            <span className="max-sm:hidden">GitHub</span>
           </a>
           <Link to="/docs/quickstart" className="hover:text-fd-muted-foreground">
             Download
@@ -39,7 +40,7 @@ export default function Home() {
           <Link to="/docs" className="hover:text-fd-muted-foreground">
             Docs
           </Link>
-          <SiteThemeToggle className="-ml-1 sm:-ml-3" />
+          <SiteThemeToggle className="-ml-2 sm:-ml-3" />
         </nav>
       </header>
 

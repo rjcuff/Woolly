@@ -39,3 +39,35 @@ html > body[data-scroll-locked] {
 .prose :where(h3) {
   margin-top: 2em;
 }
+
+/* Make every click feel like a click: a small press on buttons, and a clear
+   green check when something is copied. */
+button,
+a[role='button'] {
+  transition:
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 150ms ease,
+    color 150ms ease;
+}
+button:active:not(:disabled),
+a[role='button']:active {
+  transform: scale(0.96);
+}
+button:has(> svg.lucide-check),
+button:has(> svg.lucide-check) svg {
+  color: var(--color-green-600) !important;
+}
+.dark button:has(> svg.lucide-check),
+.dark button:has(> svg.lucide-check) svg {
+  color: var(--color-green-400) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  button,
+  a[role='button'] {
+    transition: none;
+  }
+  button:active:not(:disabled),
+  a[role='button']:active {
+    transform: none;
+  }
+}
