@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { GitHubIcon, SiteThemeToggle, Wordmark } from '@/components/brand';
-import { githubUrl } from '@/lib/shared';
+import { blueskyUrl, githubUrl } from '@/lib/shared';
 
 export function SiteHeader() {
   return (
@@ -39,6 +39,9 @@ export function SiteFooter() {
         </Link>
         <a href={githubUrl} className="hover:text-fd-foreground">
           GitHub
+        </a>
+        <a href={blueskyUrl} className="hover:text-fd-foreground">
+          Bluesky
         </a>
       </nav>
     </footer>

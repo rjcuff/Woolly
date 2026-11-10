@@ -16,6 +16,7 @@ export const gitConfig = {
   branch: 'main',
 };
 export const githubUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
+export const blueskyUrl = 'https://bsky.app/profile/usewoolly.com';
 
 const getContentUrl = createGetUrl(docsContentRoute);
 

@@ -8,6 +8,7 @@ test('footer shows the trademark and links on one screen', async ({ page }) => {
 
   const links = footer.getByRole('navigation', { name: 'Footer' });
   await expect(links.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/rjcuff/woolly');
+  await expect(links.getByRole('link', { name: 'Bluesky' })).toHaveAttribute('href', 'https://bsky.app/profile/usewoolly.com');
 
   await links.getByRole('link', { name: 'Privacy' }).click();
   await expect(page).toHaveURL(/\/privacy$/);
