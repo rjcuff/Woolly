@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Windows install script: `irm https://usewoolly.com/install.ps1 | iex`.
+- Homebrew formula, published to `rjcuff/homebrew-tap` on every release.
+
 ## 0.3.0
 
 ### Security

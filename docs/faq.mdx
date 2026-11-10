@@ -31,6 +31,12 @@ Run the install command again:
 curl -fsSL https://usewoolly.com/install.sh | sh
 ```
 
+On Windows, in PowerShell:
+
+```powershell
+irm https://usewoolly.com/install.ps1 | iex
+```
+
 Your memories are not touched.
 
 ## Which apps work with Woolly?
@@ -102,6 +108,8 @@ Delete the program, then delete your memories if you want them gone too:
 sudo rm /usr/local/bin/woolly
 rm -rf ~/.woolly
 ```
+
+On Windows, delete `%LOCALAPPDATA%\Programs\woolly` and the `.woolly` folder in your user folder.
 
 Remember to remove Woolly from any AI app you connected it to.
 

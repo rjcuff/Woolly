@@ -5,10 +5,17 @@ description: Install Woolly, save a memory, and get it back.
 
 ## Install Woolly
 
-<Tabs items={['macOS and Linux', 'Go', 'From source']}>
+<Tabs items={['macOS and Linux', 'Windows', 'Go', 'From source']}>
   <Tab value="macOS and Linux">
     ```sh
     curl -fsSL https://usewoolly.com/install.sh | sh
+    ```
+  </Tab>
+  <Tab value="Windows">
+    In PowerShell:
+
+    ```powershell
+    irm https://usewoolly.com/install.ps1 | iex
     ```
   </Tab>
   <Tab value="Go">

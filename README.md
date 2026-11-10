@@ -19,6 +19,12 @@ Woolly is a memory for your AI tools that runs on your own computer. Claude, Cur
 curl -fsSL https://usewoolly.com/install.sh | sh
 ```
 
+On Windows, in PowerShell:
+
+```powershell
+irm https://usewoolly.com/install.ps1 | iex
+```
+
 Or with Go:
 
 ```sh
@@ -66,7 +72,8 @@ Read them at [usewoolly.com/docs](https://usewoolly.com/docs) or in the [`docs`]
 | `docs` | Documentation in MDX |
 | `ui` | The review page, built into the binary |
 | `web` | Website and docs site |
-| `scripts` | The install script |
+| `scripts` | Install, release and Homebrew scripts |
+| `packaging/homebrew` | The Homebrew formula, kept in sync with the tap |
 
 ## Security
 

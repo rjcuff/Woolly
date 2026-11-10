@@ -46,3 +46,25 @@ for f in dist/*; do
 done
 
 echo "Published https://github.com/$repo/releases/tag/$tag"
+
+# Update the Homebrew tap (github.com/rjcuff/homebrew-tap) if it exists.
+tap="rjcuff/homebrew-tap"
+if curl -fsS -o /dev/null -H "Authorization: Bearer $token" "https://api.github.com/repos/$tap"; then
+  formula=$(scripts/homebrew.sh "$version")
+  printf '%s\n' "$formula" > packaging/homebrew/woolly.rb
+  sha=$(curl -fsS -H "Authorization: Bearer $token" "https://api.github.com/repos/$tap/contents/Formula/woolly.rb" 2>/dev/null |
+    python3 -c 'import json, sys; print(json.loads(sys.stdin.read(), strict=False).get("sha", ""))' || true)
+  python3 -c '
+import base64, json, sys
+body = {"message": "woolly " + sys.argv[1], "content": base64.b64encode(sys.stdin.buffer.read()).decode()}
+if sys.argv[2]:
+    body["sha"] = sys.argv[2]
+print(json.dumps(body))
+' "$version" "$sha" < packaging/homebrew/woolly.rb |
+    curl -fsS -o /dev/null -X PUT -H "Authorization: Bearer $token" \
+      "https://api.github.com/repos/$tap/contents/Formula/woolly.rb" -d @-
+  echo "Updated Homebrew: brew install rjcuff/tap/woolly"
+  echo "Commit packaging/homebrew/woolly.rb to keep the repo copy in sync."
+else
+  echo "No $tap repo yet, so Homebrew wasn't updated."
+fi
