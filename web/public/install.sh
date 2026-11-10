@@ -26,12 +26,26 @@ echo "Downloading Woolly for $os/$arch..."
 curl -fsSL "$url" -o "$tmp/woolly.tar.gz"
 tar -xzf "$tmp/woolly.tar.gz" -C "$tmp"
 
-if [ -w "$INSTALL_DIR" ]; then
-  mv "$tmp/woolly" "$INSTALL_DIR/woolly"
+# Use sudo only if the folder (or where it would be created) isn't writable.
+target="$INSTALL_DIR"
+while [ ! -d "$target" ]; do target=$(dirname "$target"); done
+if [ -w "$target" ]; then
+  sudo=""
 else
-  echo "Installing to $INSTALL_DIR (needs sudo)..."
-  sudo mv "$tmp/woolly" "$INSTALL_DIR/woolly"
+  echo "Installing to $INSTALL_DIR (needs your password)..."
+  sudo="sudo"
 fi
+$sudo mkdir -p "$INSTALL_DIR"
+$sudo mv "$tmp/woolly" "$INSTALL_DIR/woolly"
+$sudo chmod 755 "$INSTALL_DIR/woolly"
 
 echo "Installed: $("$INSTALL_DIR/woolly" version)"
+case ":$PATH:" in
+  *":$INSTALL_DIR:"*) ;;
+  *)
+    echo
+    echo "$INSTALL_DIR isn't on your PATH yet. Add it with:"
+    echo "  echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> ~/.zshrc && source ~/.zshrc"
+    ;;
+esac
 echo "Next: woolly remember \"I prefer dark mode\""
