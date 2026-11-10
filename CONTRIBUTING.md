@@ -65,6 +65,14 @@ The site builds to static files in `web/build/client`. It deploys on Vercel with
 3. Make sure `make check` passes.
 4. Open a pull request that says what changed and why.
 
+## Demo GIF
+
+`docs/demo.gif` at the top of the README is recorded from real output. After changing what commands print, re-record it:
+
+```sh
+make demo
+```
+
 ## Releases
 
 ```sh

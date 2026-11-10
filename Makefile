@@ -1,7 +1,7 @@
 VERSION ?= 0.1.0-dev
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: build test install ui web-test ui-test check release publish
+.PHONY: build test install ui web-test ui-test check release publish demo
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/woolly ./cmd/woolly
@@ -34,3 +34,7 @@ release: check
 # make publish VERSION=0.1.1  (tests, builds, tags, pushes and uploads the release)
 publish: release
 	scripts/publish.sh $(VERSION)
+
+# Records docs/demo.gif from real woolly output.
+demo: build
+	cd web && node scripts/demo.ts

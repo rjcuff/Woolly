@@ -2,6 +2,8 @@
 
 Ollama runs your models. Woolly remembers for them.
 
+![Woolly saving, replacing and recalling memories in a terminal](docs/demo.gif)
+
 Woolly is a memory for your AI tools that runs on your own computer. Claude, Cursor and your own scripts all read and write the same memory, and it's stored as plain Markdown files you can open and edit.
 
 - One binary. No Docker, no database, no account.
