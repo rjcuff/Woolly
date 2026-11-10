@@ -53,7 +53,7 @@ if curl -fsS -o /dev/null -H "Authorization: Bearer $token" "https://api.github.
   formula=$(scripts/homebrew.sh "$version")
   printf '%s\n' "$formula" > packaging/homebrew/woolly.rb
   sha=$(curl -fsS -H "Authorization: Bearer $token" "https://api.github.com/repos/$tap/contents/Formula/woolly.rb" 2>/dev/null |
-    python3 -c 'import json, sys; print(json.loads(sys.stdin.read(), strict=False).get("sha", ""))' || true)
+    python3 -c 'import json, sys; print(json.loads(sys.stdin.read() or "{}", strict=False).get("sha", ""))' 2>/dev/null || true)
   python3 -c '
 import base64, json, sys
 body = {"message": "woolly " + sys.argv[1], "content": base64.b64encode(sys.stdin.buffer.read()).decode()}
