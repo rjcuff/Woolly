@@ -289,7 +289,7 @@ func init() {
 	groups := [][]string{
 		{"live", "location", "home", "city", "moved", "move", "address", "based", "town"},
 		{"work", "job", "company", "employer", "role", "career", "office"},
-		{"like", "prefer", "preference", "favorite", "favourite", "love", "enjoy"},
+		{"like", "prefer", "preference", "favorite", "love", "enjoy"},
 		{"dislike", "hate", "avoid"},
 		{"name", "named", "called"},
 		{"pet", "dog", "cat"},

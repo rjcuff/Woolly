@@ -181,7 +181,7 @@ var rules = []rule{
 		key: fixed("user.location"), tags: []string{"home"}},
 	{re: regexp.MustCompile(`(?i)^i work (?:at|for)\s+(.{2,60})$`), key: fixed("user.employer"), tags: []string{"work"}},
 	{re: regexp.MustCompile(`(?i)^i work as an?\s+(.{2,60})$`), key: fixed("user.role"), tags: []string{"work"}},
-	{re: regexp.MustCompile(`(?i)^my favou?rite\s+([\p{L} ]{2,30}?)\s+is\s+(.{1,60})$`),
+	{re: regexp.MustCompile(`(?i)^my favorite\s+([\p{L} ]{2,30}?)\s+is\s+(.{1,60})$`),
 		key: func(m []string) string { return "favorite." + strings.ToLower(strings.TrimSpace(m[1])) }, tags: []string{"preference"}},
 	{re: regexp.MustCompile(`(?i)^i (?:really )?(?:prefer|like|love|enjoy)\s+(.{2,100})$`), tags: []string{"preference"}},
 	{re: regexp.MustCompile(`(?i)^i (?:really )?(?:don't like|do not like|dislike|hate|avoid)\s+(.{2,100})$`), tags: []string{"preference"}},
