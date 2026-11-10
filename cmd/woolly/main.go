@@ -16,6 +16,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -29,6 +30,17 @@ import (
 )
 
 var version = "0.1.0-dev"
+
+// go install builds don't get the version stamped in, so read it from the
+// module's build info instead.
+func init() {
+	if version != "0.1.0-dev" {
+		return
+	}
+	if bi, ok := debug.ReadBuildInfo(); ok && bi.Main.Version != "" && bi.Main.Version != "(devel)" {
+		version = strings.TrimPrefix(bi.Main.Version, "v")
+	}
+}
 
 const usage = `Woolly: local memory for your AI tools.
 
