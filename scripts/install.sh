@@ -1,9 +1,9 @@
 #!/bin/sh
 # Installs the latest Woolly release.
-#   curl -fsSL https://usewooly.com/install.sh | sh
+#   curl -fsSL https://usewoolly.com/install.sh | sh
 set -eu
 
-REPO="rjcuff/wooly"
+REPO="rjcuff/woolly"
 INSTALL_DIR="${WOOLLY_INSTALL_DIR:-/usr/local/bin}"
 
 os=$(uname -s | tr '[:upper:]' '[:lower:]')

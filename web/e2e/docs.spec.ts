@@ -10,7 +10,7 @@ test('page has its own title and description', async ({ page }) => {
     'content',
     'Install Woolly, save a memory, and get it back.',
   );
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://usewooly.com/docs/quickstart');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://usewoolly.com/docs/quickstart');
 });
 
 test('search finds pages', async ({ page, isMobile }) => {

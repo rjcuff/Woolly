@@ -6,7 +6,7 @@ set -eu
 
 version="${1:?usage: scripts/publish.sh <version>}"
 tag="v$version"
-repo="rjcuff/wooly"
+repo="rjcuff/woolly"
 cd "$(dirname "$0")/.."
 
 [ -n "$(ls dist 2>/dev/null)" ] || { echo "dist/ is empty. Run: make release VERSION=$version" >&2; exit 1; }
@@ -23,7 +23,7 @@ git push origin main "$tag"
 body=$(python3 -c '
 import json, sys
 v = sys.argv[1]
-notes = f"Woolly {v}\n\n```sh\ncurl -fsSL https://usewooly.com/install.sh | sh\n```\n\nDocs: https://usewooly.com/docs"
+notes = f"Woolly {v}\n\n```sh\ncurl -fsSL https://usewoolly.com/install.sh | sh\n```\n\nDocs: https://usewoolly.com/docs"
 print(json.dumps({"tag_name": "v" + v, "name": "v" + v, "body": notes, "draft": False, "prerelease": False, "make_latest": "true"}))
 ' "$version")
 

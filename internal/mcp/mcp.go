@@ -13,9 +13,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rjcuff/wooly/internal/memory"
-	"github.com/rjcuff/wooly/internal/profile"
-	"github.com/rjcuff/wooly/internal/recall"
+	"github.com/rjcuff/woolly/internal/memory"
+	"github.com/rjcuff/woolly/internal/profile"
+	"github.com/rjcuff/woolly/internal/recall"
 )
 
 var supportedVersions = []string{"2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"}

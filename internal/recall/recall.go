@@ -20,7 +20,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/rjcuff/wooly/internal/memory"
+	"github.com/rjcuff/woolly/internal/memory"
 )
 
 // Mode says how a recall was scored.

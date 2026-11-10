@@ -19,7 +19,7 @@ test('home fits on one screen with the headline and button', async ({ page }) =>
 test('nav links and theme toggle are visible and work', async ({ page }) => {
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: 'Main' });
-  await expect(nav.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/rjcuff/wooly');
+  await expect(nav.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/rjcuff/woolly');
   await expect(nav.getByRole('link', { name: 'Docs' })).toBeVisible();
 
   const toggle = nav.getByRole('button', { name: /switch to (dark|light) mode/i });
@@ -34,7 +34,7 @@ test('nav links and theme toggle are visible and work', async ({ page }) => {
 test('link previews point at the Woolly image', async ({ page, request }) => {
   await page.goto('/');
   const image = await page.locator('meta[property="og:image"]').getAttribute('content');
-  expect(image).toBe('https://usewooly.com/og/docs/image.png');
+  expect(image).toBe('https://usewoolly.com/og/docs/image.png');
 
   const res = await request.get('/og/docs/image.png');
   expect(res.status()).toBe(200);
@@ -45,5 +45,5 @@ test('sitemap, robots and install script are served', async ({ request }) => {
   for (const path of ['/sitemap.xml', '/robots.txt', '/install.sh']) {
     expect((await request.get(path)).status(), path).toBe(200);
   }
-  expect(await (await request.get('/sitemap.xml')).text()).toContain('https://usewooly.com/docs/quickstart');
+  expect(await (await request.get('/sitemap.xml')).text()).toContain('https://usewoolly.com/docs/quickstart');
 });

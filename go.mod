@@ -1,3 +1,3 @@
-module github.com/rjcuff/wooly
+module github.com/rjcuff/woolly
 
 go 1.22

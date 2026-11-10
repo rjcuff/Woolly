@@ -3,7 +3,7 @@ package profile
 import (
 	"testing"
 
-	"github.com/rjcuff/wooly/internal/memory"
+	"github.com/rjcuff/woolly/internal/memory"
 )
 
 func TestBuildAndMarkdown(t *testing.T) {

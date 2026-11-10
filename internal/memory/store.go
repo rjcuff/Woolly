@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rjcuff/wooly/internal/secrets"
+	"github.com/rjcuff/woolly/internal/secrets"
 )
 
 // ErrNotFound is returned when no memory matches an ID.

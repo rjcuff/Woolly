@@ -11,8 +11,8 @@ For anything bigger than a small fix, open an issue first so we can agree on the
 You need Go 1.22 or newer. Node 22 is only needed for the website.
 
 ```sh
-git clone https://github.com/rjcuff/wooly
-cd wooly
+git clone https://github.com/rjcuff/woolly
+cd woolly
 make build      # builds bin/woolly
 make test       # Go tests
 make check      # Go tests, site type check and browser tests (run before every commit)

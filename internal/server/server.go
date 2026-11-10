@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rjcuff/wooly/internal/memory"
-	"github.com/rjcuff/wooly/internal/profile"
-	"github.com/rjcuff/wooly/internal/recall"
+	"github.com/rjcuff/woolly/internal/memory"
+	"github.com/rjcuff/woolly/internal/profile"
+	"github.com/rjcuff/woolly/internal/recall"
 )
 
 // DefaultAddr sits next to Ollama's 11434.

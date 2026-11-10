@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://usewooly.com/sitemap.xml
+Sitemap: https://usewoolly.com/sitemap.xml

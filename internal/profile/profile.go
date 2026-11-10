@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rjcuff/wooly/internal/memory"
+	"github.com/rjcuff/woolly/internal/memory"
 )
 
 // Profile groups current memories into sections.
