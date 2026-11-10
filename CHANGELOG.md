@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `woolly-ai` Python package: save, recall and add memories to prompts from your own apps.
+
 ## 0.4.0
 
 - `woolly proxy` gives memory to Ollama and to apps that use the OpenAI or Anthropic API. It adds relevant memories to each chat and saves facts you state.

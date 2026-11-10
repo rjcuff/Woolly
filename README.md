@@ -78,6 +78,21 @@ OLLAMA_HOST=127.0.0.1:11436 ollama run llama3.2
 
 Every chat now includes what Woolly knows about you, and facts you mention are saved. It also works with OpenAI and Anthropic apps. See [Proxy](https://usewoolly.com/docs/proxy).
 
+## Use it from Python
+
+```sh
+pip install woolly-ai
+```
+
+```python
+import woolly
+
+woolly.remember("I prefer short answers")
+system_prompt = "You are a helpful assistant.\n\n" + woolly.context(user_message)
+```
+
+See [Python](https://usewoolly.com/docs/python).
+
 ## Docs
 
 Read them at [usewoolly.com/docs](https://usewoolly.com/docs) or in the [`docs`](docs) folder.
@@ -89,6 +104,7 @@ Read them at [usewoolly.com/docs](https://usewoolly.com/docs) or in the [`docs`]
 | `cmd/woolly`, `internal` | The Woolly program, written in Go |
 | `docs` | Documentation in MDX |
 | `ui` | The review page, built into the binary |
+| `sdk/python` | The `woolly-ai` Python package |
 | `web` | Website and docs site |
 | `scripts` | Install, release and Homebrew scripts |
 | `packaging/homebrew` | The Homebrew formula, kept in sync with the tap |

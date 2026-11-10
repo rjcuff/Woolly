@@ -1,7 +1,7 @@
 VERSION ?= 0.1.0-dev
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: build test install ui web-test ui-test check release publish demo
+.PHONY: build test install ui web-test ui-test py-test check release publish demo
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/woolly ./cmd/woolly
@@ -25,7 +25,11 @@ web-test:
 	cd web && npm run types:check && npm run test:e2e
 
 # Run this before every commit.
-check: test web-test ui-test
+# Tests the Python package against a real woolly server.
+py-test: build
+	cd sdk/python && python3 -m unittest discover -s tests
+
+check: test web-test ui-test py-test
 
 # make release VERSION=0.1.1
 release: check

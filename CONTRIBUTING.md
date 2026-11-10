@@ -35,6 +35,14 @@ npm run dev     # proxies API calls to a running woolly serve
 make ui         # from the repo root, rebuild before committing
 ```
 
+### Python package
+
+The `woolly-ai` package lives in `sdk/python`. It has no dependencies. Its tests start a real `woolly serve`:
+
+```sh
+make py-test
+```
+
 ### Website and docs
 
 ```sh

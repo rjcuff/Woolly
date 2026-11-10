@@ -10,3 +10,6 @@ web/playwright-report/
 ui/node_modules/
 ui/test-results/
 ui/playwright-report/
+sdk/python/dist/
+__pycache__/
+*.egg-info/

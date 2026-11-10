@@ -1,0 +1,97 @@
+---
+title: Python
+description: Use Woolly's memory in your own Python apps.
+---
+
+The `woolly-ai` package lets your Python app save and recall memories, and add them to any AI prompt. It has no dependencies and works with Python 3.9 and newer.
+
+```sh
+pip install woolly-ai
+```
+
+Woolly needs to be running on the same computer:
+
+```sh
+woolly serve
+```
+
+The package finds the server and its token on its own.
+
+## Save and recall
+
+```python
+import woolly
+
+woolly.remember("Moved to Denver in October", key="user.location")
+woolly.remember("I prefer short answers")
+
+for m in woolly.recall("where do I live?"):
+    print(m.content)
+```
+
+Give a `key` for facts that can change. A newer memory with the same key replaces the older one.
+
+## Add memory to a prompt
+
+`woolly.context()` returns a short note of the memories relevant to a message, ready to put in a system prompt. It tells the model the notes are information, not instructions. It returns an empty string when nothing matches.
+
+```python
+import woolly
+from openai import OpenAI
+
+client = OpenAI()
+question = "Any good hikes near me this weekend?"
+
+response = client.chat.completions.create(
+    model="gpt-4.1-mini",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant.\n\n" + woolly.context(question)},
+        {"role": "user", "content": question},
+    ],
+)
+```
+
+With Anthropic, add it to `system`. With Ollama, add it as a system message.
+
+## Things your app figured out
+
+If your app infers something instead of the user saying it, mark it as `source="agent"`. If it disagrees with what the user said, Woolly keeps the user's version and saves yours as a conflict for them to review.
+
+```python
+r = woolly.remember("Prefers spaces", key="code.indent", source="agent")
+if r.saved_as_conflict:
+    print("The user said:", r.conflicts_with.content)
+```
+
+## Everything else
+
+```python
+from woolly import Woolly
+
+w = Woolly()
+
+w.list()                       # current memories
+w.get(memory_id)
+w.update(memory_id, content="Drinks tea now")
+w.forget(memory_id)            # moves it to the trash
+w.restore(memory_id)
+w.trash()
+w.conflicts()
+w.resolve(memory_id)
+w.profile().markdown           # a summary of everything known
+```
+
+## Errors
+
+| Error | When |
+| --- | --- |
+| `woolly.WoollyNotRunning` | `woolly serve` isn't running |
+| `woolly.WoollyError` | Woolly refused the request, for example a password or API key. `.status` holds the HTTP status |
+
+## Settings
+
+`Woolly()` uses `WOOLLY_HOST` and `WOOLLY_HOME` like the rest of Woolly. You can also pass them in:
+
+```python
+w = Woolly(address="127.0.0.1:11435", home="~/.woolly")
+```

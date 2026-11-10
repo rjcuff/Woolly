@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "woolly-ai"
+version = "0.1.0"
+description = "Python client for Woolly, the local memory for your AI tools"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+dependencies = []
+keywords = ["ai", "memory", "llm", "local-first", "privacy", "mcp", "ollama"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://usewoolly.com"
+Documentation = "https://usewoolly.com/docs/python"
+Source = "https://github.com/rjcuff/woolly"
+
+[tool.hatch.build.targets.wheel]
+packages = ["woolly"]
