@@ -1,0 +1,46 @@
+import { Link } from 'react-router';
+import { GitHubIcon, SiteThemeToggle, Wordmark } from '@/components/brand';
+import { githubUrl } from '@/lib/shared';
+
+export function SiteHeader() {
+  return (
+    <header className="flex items-center justify-between gap-6 py-5">
+      <Link to="/" aria-label="Woolly home">
+        <Wordmark className="text-[28px] sm:text-[34px]" />
+      </Link>
+      <nav aria-label="Main" className="flex items-center gap-4 text-[16px] sm:gap-8 sm:text-lg">
+        <a href={githubUrl} aria-label="GitHub" className="hover:text-fd-muted-foreground">
+          <GitHubIcon className="size-5 sm:hidden" />
+          <span className="max-sm:hidden">GitHub</span>
+        </a>
+        <Link to="/docs/quickstart" className="hover:text-fd-muted-foreground">
+          Download
+        </Link>
+        <Link to="/docs" className="hover:text-fd-muted-foreground">
+          Docs
+        </Link>
+        <SiteThemeToggle className="-ml-2 sm:-ml-3" />
+      </nav>
+    </header>
+  );
+}
+
+export function SiteFooter() {
+  const year = new Date().getFullYear();
+  return (
+    <footer className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-fd-border py-5 text-sm text-fd-muted-foreground">
+      <span>© {year} Woolly™</span>
+      <nav aria-label="Footer" className="flex items-center gap-5">
+        <Link to="/privacy" className="hover:text-fd-foreground">
+          Privacy
+        </Link>
+        <Link to="/terms" className="hover:text-fd-foreground">
+          Terms
+        </Link>
+        <a href={githubUrl} className="hover:text-fd-foreground">
+          GitHub
+        </a>
+      </nav>
+    </footer>
+  );
+}
