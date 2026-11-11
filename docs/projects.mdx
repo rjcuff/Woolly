@@ -1,0 +1,42 @@
+---
+title: Projects
+description: Keep notes about each codebase with that codebase, and facts about you everywhere.
+---
+
+Some memories are about you, like your name or how you like answers written. Others only matter in one codebase, like "acme uses Postgres 17" or "run `make dev` to start the notes app". Woolly keeps the two apart.
+
+- **Facts about you** have no project. Every app sees them, in every folder.
+- **Facts about a project** belong to that project. Apps working in it see them, and apps working anywhere else don't.
+
+So when you open Claude Code in `acme`, it gets your preferences plus the acme notes, and nothing about your other repos.
+
+## How the project is chosen
+
+The project is the name of the git repo you're working in. For example, anything under `~/code/acme` is in the `acme` project.
+
+AI apps decide when to save a fact to the project. Woolly tells them which project they're in and asks them to keep facts about you global. If an app saves something to the wrong place, edit it on the [review page](/docs/review) and change its project, or clear the project to make it apply everywhere.
+
+Outside a git repo, apps see everything, as before.
+
+## What each app sees
+
+| Where | What it gets |
+| --- | --- |
+| Claude Code at startup | Your profile, plus the current project's notes. See [Memory that loads by itself](/docs/connect#memory-that-loads-by-itself) |
+| `recall` from an MCP app in a repo | Your memories plus that project's |
+| `get_profile` | Your profile, plus the current project's notes |
+| `woolly profile` | Only facts about you |
+
+Keys only clash within a project. A `database` key in `acme` never replaces the `database` key in another repo.
+
+## From the command line
+
+```sh
+woolly remember "Deploys with Fly" --project acme
+woolly list --project acme
+woolly recall "how do we deploy" --project acme
+```
+
+## Set the project yourself
+
+Set `WOOLLY_PROJECT` to use a different name than the repo's, or to give a folder that isn't a git repo a project.

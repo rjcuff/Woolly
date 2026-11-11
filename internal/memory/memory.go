@@ -68,6 +68,9 @@ type Memory struct {
 	ConflictsWith string    `json:"conflicts_with,omitempty"`
 	// Via is the app that saved the memory, like "Cursor" or "command line".
 	Via string `json:"via,omitempty"`
+	// Project is set for facts that only matter in one project, like a
+	// repo's database. Facts about the user have no project.
+	Project string `json:"project,omitempty"`
 
 	file string // path on disk; empty until saved
 }
@@ -115,6 +118,30 @@ func newID(t time.Time) string {
 	var b [4]byte
 	_, _ = rand.Read(b[:])
 	return t.UTC().Format("20060102-150405") + "-" + hex.EncodeToString(b[:])
+}
+
+// NormalizeProject lowercases a project name and keeps it filename and
+// URL safe: "My App" becomes "my-app".
+func NormalizeProject(p string) string {
+	p = strings.Join(strings.Fields(strings.ToLower(p)), "-")
+	var b strings.Builder
+	for _, r := range p {
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '_' || r == '.' {
+			b.WriteRune(r)
+		}
+	}
+	out := strings.Trim(b.String(), "-.")
+	if len(out) > 60 {
+		out = out[:60]
+	}
+	return out
+}
+
+// In reports whether the memory belongs in project: global memories are in
+// every project, and project memories only in their own. An empty project
+// means "everywhere", which includes every memory.
+func (m *Memory) In(project string) bool {
+	return project == "" || m.Project == "" || m.Project == project
 }
 
 // CleanApp tidies an app name from a client: one line, at most 40 characters.

@@ -67,11 +67,12 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string, 
 			Key     string   `json:"key"`
 			Tags    []string `json:"tags"`
 			Source  string   `json:"source"`
+			Project string   `json:"project"`
 		}
 		if !readJSON(w, r, &req) {
 			return
 		}
-		in := memory.RememberInput{Content: req.Content, Key: req.Key, Tags: req.Tags, Via: appOf(r)}
+		in := memory.RememberInput{Content: req.Content, Key: req.Key, Tags: req.Tags, Via: appOf(r), Project: req.Project}
 		if req.Source != "" {
 			src, ok := memory.ParseSource(req.Source)
 			if !ok {
@@ -94,11 +95,12 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string, 
 			Query      string `json:"query"`
 			Limit      int    `json:"limit"`
 			IncludeAll bool   `json:"include_all"`
+			Project    string `json:"project"`
 		}
 		if !readJSON(w, r, &req) {
 			return
 		}
-		results, mode, err := engine.Recall(r.Context(), req.Query, req.Limit, req.IncludeAll)
+		results, mode, err := engine.RecallIn(r.Context(), req.Query, req.Limit, req.IncludeAll, req.Project)
 		if err != nil {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
@@ -121,6 +123,15 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string, 
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		if p := memory.NormalizeProject(r.URL.Query().Get("project")); p != "" {
+			kept := mems[:0]
+			for _, m := range mems {
+				if m.Project == p {
+					kept = append(kept, m)
+				}
+			}
+			mems = kept
+		}
 		record(r, "list", nil, "", len(mems))
 		writeJSON(w, http.StatusOK, map[string]any{"memories": orEmpty(mems)})
 	})
@@ -139,11 +150,12 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string, 
 			Content *string   `json:"content"`
 			Key     *string   `json:"key"`
 			Tags    *[]string `json:"tags"`
+			Project *string   `json:"project"`
 		}
 		if !readJSON(w, r, &req) {
 			return
 		}
-		m, err := store.Update(r.PathValue("id"), memory.UpdateInput{Content: req.Content, Key: req.Key, Tags: req.Tags})
+		m, err := store.Update(r.PathValue("id"), memory.UpdateInput{Content: req.Content, Key: req.Key, Tags: req.Tags, Project: req.Project})
 		if err != nil {
 			writeStoreError(w, err)
 			return

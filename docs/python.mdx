@@ -31,6 +31,13 @@ for m in woolly.recall("where do I live?"):
 
 Give a `key` for facts that can change. A newer memory with the same key replaces the older one.
 
+For facts about one project, pass `project`. Searching with a project returns the user's memories plus that project's, and leaves other projects out:
+
+```python
+w.remember("Deploys with Fly", project="acme")
+w.recall("how do we deploy", project="acme")
+```
+
 ## Add memory to a prompt
 
 `woolly.context()` returns a short note of the memories relevant to a message, ready to put in a system prompt. It tells the model the notes are information, not instructions. It returns an empty string when nothing matches.

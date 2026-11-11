@@ -198,6 +198,9 @@ type RememberInput struct {
 	AllowSensitive bool
 	// Via names the app saving the memory.
 	Via string
+	// Project scopes the memory to one project. Keys only clash within the
+	// same project.
+	Project string
 }
 
 // RememberResult reports what Remember did.
@@ -238,6 +241,7 @@ func (s *Store) Remember(in RememberInput) (*RememberResult, error) {
 	}
 	key := NormalizeKey(in.Key)
 	tags := NormalizeTags(in.Tags)
+	project := NormalizeProject(in.Project)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -248,7 +252,7 @@ func (s *Store) Remember(in RememberInput) (*RememberResult, error) {
 
 	// Duplicate: same key and same text as a live memory.
 	for _, ex := range s.mems {
-		if ex.Status == StatusSuperseded || ex.Key != key || !sameText(ex.Content, content) {
+		if ex.Status == StatusSuperseded || ex.Key != key || ex.Project != project || !sameText(ex.Content, content) {
 			continue
 		}
 		ex.UpdatedAt = now
@@ -272,7 +276,7 @@ func (s *Store) Remember(in RememberInput) (*RememberResult, error) {
 	m := &Memory{
 		ID: newID(now), Content: content, Key: key, Tags: tags,
 		Source: src, Status: StatusActive, CreatedAt: now, UpdatedAt: now,
-		Via: CleanApp(in.Via),
+		Via: CleanApp(in.Via), Project: project,
 	}
 	res := &RememberResult{}
 
@@ -280,7 +284,7 @@ func (s *Store) Remember(in RememberInput) (*RememberResult, error) {
 		var same []*Memory
 		var stronger *Memory
 		for _, ex := range s.mems {
-			if ex.Key != key || ex.Status == StatusSuperseded {
+			if ex.Key != key || ex.Project != project || ex.Status == StatusSuperseded {
 				continue
 			}
 			same = append(same, ex)
@@ -366,6 +370,7 @@ type UpdateInput struct {
 	Content        *string
 	Key            *string
 	Tags           *[]string
+	Project        *string
 	AllowSensitive bool
 }
 
@@ -396,6 +401,9 @@ func (s *Store) Update(id string, in UpdateInput) (Memory, error) {
 	}
 	if in.Tags != nil {
 		m.Tags = NormalizeTags(*in.Tags)
+	}
+	if in.Project != nil {
+		m.Project = NormalizeProject(*in.Project)
 	}
 	m.UpdatedAt = time.Now().UTC()
 	if m.Status == StatusActive && m.Key != "" {
@@ -542,7 +550,7 @@ func (s *Store) resolveLocked(keep *Memory, now time.Time) ([]Memory, error) {
 	var replaced []Memory
 	if keep.Key != "" {
 		for _, ex := range s.mems {
-			if ex.ID == keep.ID || ex.Key != keep.Key || ex.Status == StatusSuperseded {
+			if ex.ID == keep.ID || ex.Key != keep.Key || ex.Project != keep.Project || ex.Status == StatusSuperseded {
 				continue
 			}
 			ex.Status = StatusSuperseded

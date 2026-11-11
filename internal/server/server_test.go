@@ -124,3 +124,18 @@ func TestActivityRecordsApps(t *testing.T) {
 		t.Fatalf("activity needs the token: %d", code)
 	}
 }
+
+func TestProjectsOverTheAPI(t *testing.T) {
+	h, token := setup(t)
+	auth := map[string]string{"Authorization": "Bearer " + token}
+	do(h, "POST", "/api/remember", `{"content":"Acme deploys with Fly","project":"Acme"}`, auth)
+	do(h, "POST", "/api/remember", `{"content":"Notes deploys with Vercel","project":"notes"}`, auth)
+	rec := do(h, "POST", "/api/recall", `{"query":"deploys","project":"acme"}`, auth)
+	if !strings.Contains(rec.Body.String(), "Fly") || strings.Contains(rec.Body.String(), "Vercel") {
+		t.Fatalf("recall: %s", rec.Body)
+	}
+	rec = do(h, "GET", "/api/memories?project=notes", "", auth)
+	if strings.Contains(rec.Body.String(), "Fly") || !strings.Contains(rec.Body.String(), `"project":"notes"`) {
+		t.Fatalf("list: %s", rec.Body)
+	}
+}

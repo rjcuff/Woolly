@@ -24,6 +24,8 @@ export function App() {
   const [activity, setActivity] = useState<Activity[]>([]);
   const [trashById, setTrashById] = useState<Map<string, Memory>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [project, setProject] = useState('');
+  const [projects, setProjects] = useState<string[]>([]);
   const [notice, setNotice] = useState<Notice>(null);
 
   const flash = useCallback((n: Notice) => {
@@ -35,6 +37,7 @@ export function App() {
     try {
       const [all, conflicts] = await Promise.all([api.list(true), api.conflicts()]);
       setById(new Map(all.map((m) => [m.id, m])));
+      setProjects([...new Set(all.map((m) => m.project).filter((p): p is string => !!p))].sort());
       setConflictCount(conflicts.length);
       if (view === 'profile') {
         setProfileText(await api.profile());
@@ -121,14 +124,27 @@ export function App() {
             {view === 'current' && <AddForm onAdd={(c, k, t) => run(() => api.remember(c, k, t), 'Saved')} />}
             {view === 'trash' && items.length > 0 && <TrashBar onEmpty={() => run(() => api.emptyTrash(), 'Trash emptied')} />}
             {view !== 'conflicts' && view !== 'trash' && (
-              <input
-                id="search"
-                className="search"
-                type="search"
-                placeholder="Search memories"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+              <div className="search-row">
+                <input
+                  id="search"
+                  className="search"
+                  type="search"
+                  placeholder="Search memories"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                {projects.length > 0 && (
+                  <select aria-label="Project" value={project} onChange={(e) => setProject(e.target.value)}>
+                    <option value="">All projects</option>
+                    <option value="-">About you</option>
+                    {projects.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
             )}
             {view === 'conflicts' && items.length > 0 && (
               <p className="hint">
@@ -139,7 +155,7 @@ export function App() {
               <Empty view={view} searching={!!query.trim()} />
             ) : (
               <ul className="list">
-                {items.map((m) => (
+                {items.filter((m) => !project || (project === '-' ? !m.project : m.project === project)).map((m) => (
                   <MemoryRow
                     key={m.id}
                     memory={m}
@@ -242,7 +258,7 @@ function MemoryRow({
   memory: Memory;
   other?: Memory;
   replacedBy?: Memory;
-  onSave: (patch: { content: string; key: string; tags: string[] }) => Promise<boolean>;
+  onSave: (patch: { content: string; key: string; tags: string[]; project: string }) => Promise<boolean>;
   onForget: () => Promise<void>;
   onRestore: () => Promise<boolean>;
   onKeep: (id: string) => Promise<boolean>;
@@ -252,6 +268,7 @@ function MemoryRow({
   const [content, setContent] = useState(m.content);
   const [key, setKey] = useState(m.key ?? '');
   const [tags, setTags] = useState((m.tags ?? []).join(', '));
+  const [proj, setProj] = useState(m.project ?? '');
 
   const date = useMemo(
     () => new Date(m.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -265,12 +282,13 @@ function MemoryRow({
         <div className="add-row">
           <input aria-label="Edit key" placeholder="Key (optional)" value={key} onChange={(e) => setKey(e.target.value)} />
           <input aria-label="Edit tags" placeholder="Tags (optional)" value={tags} onChange={(e) => setTags(e.target.value)} />
+          <input aria-label="Edit project" placeholder="Project (empty means about you)" value={proj} onChange={(e) => setProj(e.target.value)} />
         </div>
         <div className="actions">
           <button
             className="primary"
             onClick={async () => {
-              if (await onSave({ content, key, tags: splitTags(tags) })) setEditing(false);
+              if (await onSave({ content, key, tags: splitTags(tags), project: proj })) setEditing(false);
             }}
           >
             Save
@@ -285,6 +303,7 @@ function MemoryRow({
     <li className={`row ${m.status}`}>
       <div className="content">{m.content}</div>
       <div className="meta">
+        {m.project && <span className="chip project">{m.project}</span>}
         {m.key && <span className="chip key">{m.key}</span>}
         {(m.tags ?? []).map((t) => (
           <span key={t} className="chip">

@@ -148,6 +148,24 @@ test('shows which app saved a memory and what each app did', async ({ page }) =>
   await expect(row).toBeVisible();
 });
 
+test('filters by project', async ({ page }) => {
+  const id = unique();
+  const inProject = `Deploys with Fly ${id}`;
+  const aboutMe = `Likes green tea ${id}`;
+  await page.request.post('/api/remember', { data: { content: inProject, project: `acme-${id}` } });
+  await page.request.post('/api/remember', { data: { content: aboutMe } });
+  await page.reload();
+  await expect(page.getByRole('listitem').filter({ hasText: inProject })).toContainText(`acme-${id}`);
+
+  await page.getByLabel('Project').selectOption(`acme-${id}`);
+  await expect(page.getByText(inProject)).toBeVisible();
+  await expect(page.getByText(aboutMe)).toHaveCount(0);
+
+  await page.getByLabel('Project').selectOption('About you');
+  await expect(page.getByText(aboutMe)).toBeVisible();
+  await expect(page.getByText(inProject)).toHaveCount(0);
+});
+
 test('no horizontal scrolling', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });

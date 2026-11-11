@@ -27,7 +27,9 @@ When you learn a durable fact (a preference, a decision, a fact about the user o
 Call "get_profile" once at the start of a conversation for a summary of the user.
 Never save passwords, API keys or other secrets. Woolly will refuse them.
 Use a stable "key" (e.g. "user.location", "project.acme.database") for facts that can change, so newer facts replace older ones.
-Set source to "user" only when the user said it directly; use "agent" for things you inferred.`
+Set source to "user" only when the user said it directly; use "agent" for things you inferred.
+Facts about the user (name, preferences, how they like to work) apply everywhere: leave "project" empty.
+Facts that only matter in one codebase (its stack, commands, decisions) belong to that project: set "project".`
 
 // Server is an MCP server backed by a Woolly store.
 type Server struct {
@@ -36,6 +38,10 @@ type Server struct {
 	Version string
 	// Activity, if set, records what the connected app does.
 	Activity *activity.Log
+	// Project is the project the app is working in, if Woolly can tell.
+	// Searches then cover the user's memories plus this project's, and
+	// leave other projects out.
+	Project string
 
 	app   string // the connected app, from initialize
 	outMu sync.Mutex
@@ -134,7 +140,7 @@ func (s *Server) dispatch(ctx context.Context, req request) (any, *rpcError) {
 			"protocolVersion": version,
 			"capabilities":    map[string]any{"tools": map[string]any{"listChanged": false}},
 			"serverInfo":      map[string]any{"name": "woolly", "title": "Woolly", "version": s.Version},
-			"instructions":    instructions,
+			"instructions":    s.instructions(),
 		}, nil
 	case "ping":
 		return map[string]any{}, nil
@@ -185,6 +191,7 @@ var tools = []map[string]any{
 			"key":     map[string]any{"type": "string", "description": `Optional stable slot such as "user.location" or "project.acme.database".`},
 			"tags":    map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Optional tags."},
 			"source":  map[string]any{"type": "string", "enum": []string{"user", "agent"}, "description": `"user" if the user said it directly, "agent" if you inferred it. Default "agent".`},
+			"project": map[string]any{"type": "string", "description": "Only for facts about one codebase or project, like its database or build steps: the project's name, usually the repo name. Leave empty for facts about the user."},
 		}, "content"),
 	},
 	{
@@ -192,8 +199,9 @@ var tools = []map[string]any{
 		"title":       "Recall",
 		"description": "Search the user's Woolly memories for anything relevant to a query. Returns the current (non-stale) facts, best match first.",
 		"inputSchema": obj(map[string]any{
-			"query": map[string]any{"type": "string", "description": "What you want to know, e.g. \"user's coding preferences\"."},
-			"limit": map[string]any{"type": "integer", "minimum": 1, "maximum": 50, "description": "Max results (default 5)."},
+			"query":   map[string]any{"type": "string", "description": "What you want to know, e.g. \"user's coding preferences\"."},
+			"limit":   map[string]any{"type": "integer", "minimum": 1, "maximum": 50, "description": "Max results (default 5)."},
+			"project": map[string]any{"type": "string", "description": "Search this project's memories plus the user's. Defaults to the current project when Woolly knows it."},
 		}, "query"),
 	},
 	{
@@ -235,6 +243,7 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			Key     string `json:"key"`
 			Tags    any    `json:"tags"`
 			Source  string `json:"source"`
+			Project string `json:"project"`
 		}
 		if err := json.Unmarshal(raw, &a); err != nil {
 			return "", fmt.Errorf("invalid arguments: %v", err)
@@ -247,7 +256,7 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			}
 			src = parsed
 		}
-		res, err := s.Store.Remember(memory.RememberInput{Content: a.Content, Key: a.Key, Tags: toStrings(a.Tags), Source: src, Via: s.appName()})
+		res, err := s.Store.Remember(memory.RememberInput{Content: a.Content, Key: a.Key, Tags: toStrings(a.Tags), Source: src, Via: s.appName(), Project: a.Project})
 		if err != nil {
 			return "", err
 		}
@@ -256,13 +265,18 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 
 	case "recall":
 		var a struct {
-			Query string `json:"query"`
-			Limit int    `json:"limit"`
+			Query   string `json:"query"`
+			Limit   int    `json:"limit"`
+			Project string `json:"project"`
 		}
 		if err := json.Unmarshal(raw, &a); err != nil {
 			return "", fmt.Errorf("invalid arguments: %v", err)
 		}
-		results, _, err := s.Engine.Recall(ctx, a.Query, a.Limit, false)
+		project := a.Project
+		if project == "" {
+			project = s.Project
+		}
+		results, _, err := s.Engine.RecallIn(ctx, a.Query, a.Limit, false, project)
 		if err != nil {
 			return "", err
 		}
@@ -288,16 +302,34 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			return "", err
 		}
 		s.log("profile", nil, "", len(mems))
-		return notesHeader + profile.Build(mems).Markdown(), nil
+		out := notesHeader + profile.Build(mems).Markdown()
+		if p := memory.NormalizeProject(s.Project); p != "" {
+			var lines []string
+			for _, m := range mems {
+				if m.Project == p {
+					lines = append(lines, "- "+m.Content)
+				}
+			}
+			if len(lines) > 0 {
+				out += fmt.Sprintf("\n## This project (%s)\n\n%s\n", p, strings.Join(lines, "\n"))
+			}
+		}
+		return out, nil
 
 	case "list_memories":
 		var a struct {
 			IncludeSuperseded bool `json:"include_superseded"`
 		}
 		_ = json.Unmarshal(raw, &a)
-		mems, err := s.Store.List(a.IncludeSuperseded)
+		all, err := s.Store.List(a.IncludeSuperseded)
 		if err != nil {
 			return "", err
+		}
+		var mems []memory.Memory
+		for i := range all {
+			if all[i].In(memory.NormalizeProject(s.Project)) {
+				mems = append(mems, all[i])
+			}
 		}
 		s.log("list", nil, "", len(mems))
 		if len(mems) == 0 {
@@ -337,6 +369,13 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 	return "", fmt.Errorf("unknown tool %q", name)
 }
 
+func (s *Server) instructions() string {
+	if p := memory.NormalizeProject(s.Project); p != "" {
+		return instructions + "\nThe current project is \"" + p + "\"."
+	}
+	return instructions
+}
+
 func (s *Server) appName() string {
 	if s.app == "" {
 		return "MCP app"
@@ -373,6 +412,9 @@ func Line(m memory.Memory) string {
 	var meta []string
 	if m.Key != "" {
 		meta = append(meta, "key: "+m.Key)
+	}
+	if m.Project != "" {
+		meta = append(meta, "project: "+m.Project)
 	}
 	meta = append(meta, "source: "+string(m.Source))
 	if m.Status != memory.StatusActive {

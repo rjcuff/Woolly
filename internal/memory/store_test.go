@@ -209,3 +209,28 @@ func TestTrashAndRestore(t *testing.T) {
 		t.Fatal("trash should be empty")
 	}
 }
+
+func TestProjectsKeepKeysApart(t *testing.T) {
+	s := newStore(t)
+	s.Remember(RememberInput{Content: "Uses Postgres", Key: "database", Project: "Acme"})
+	res, err := s.Remember(RememberInput{Content: "Uses SQLite", Key: "database", Project: "notes-app"})
+	if err != nil || len(res.Superseded) != 0 || res.Memory.Project != "notes-app" {
+		t.Fatalf("different projects should not replace each other: %+v %v", res, err)
+	}
+	res, _ = s.Remember(RememberInput{Content: "Uses MySQL now", Key: "database", Project: "acme"})
+	if len(res.Superseded) != 1 || res.Superseded[0].Content != "Uses Postgres" {
+		t.Fatalf("same project should replace: %+v", res)
+	}
+	got, _ := s.Get(res.Memory.ID)
+	if got.Project != "acme" || !got.In("acme") || got.In("notes-app") || !got.In("") {
+		t.Fatalf("project scoping: %+v", got)
+	}
+}
+
+func TestNormalizeProject(t *testing.T) {
+	for in, want := range map[string]string{"My App": "my-app", " acme ": "acme", "../etc": "etc", "a/b": "ab", "": ""} {
+		if got := NormalizeProject(in); got != want {
+			t.Errorf("NormalizeProject(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

@@ -37,6 +37,7 @@ class Memory:
     superseded_by: Optional[str] = None
     conflicts_with: Optional[str] = None
     via: Optional[str] = None
+    project: Optional[str] = None
     score: Optional[float] = None
 
     @classmethod
@@ -53,6 +54,7 @@ class Memory:
             superseded_by=d.get("superseded_by") or None,
             conflicts_with=d.get("conflicts_with") or None,
             via=d.get("via") or None,
+            project=d.get("project") or None,
             score=score,
         )
 
@@ -162,13 +164,15 @@ class Woolly:
         key: Optional[str] = None,
         tags: Optional[List[str]] = None,
         source: str = "user",
+        project: Optional[str] = None,
     ) -> RememberResult:
         """Save a memory.
 
         Give a ``key`` (like ``"user.location"``) for facts that can change: a
         newer memory with the same key replaces the older one. Use
         ``source="agent"`` for things your app inferred rather than things the
-        user said. Woolly refuses secrets, and refuses instruction-like text
+        user said. Set ``project`` for facts that only matter in one project,
+        like its database. Woolly refuses secrets, and refuses instruction-like text
         that doesn't come from the user, by raising :class:`WoollyError`.
         """
         body: Dict[str, Any] = {"content": content, "source": source}
@@ -176,6 +180,8 @@ class Woolly:
             body["key"] = key
         if tags:
             body["tags"] = list(tags)
+        if project:
+            body["project"] = project
         r = self._request("POST", "/api/remember", body)
         conflict = r.get("conflicts_with")
         return RememberResult(
@@ -185,18 +191,27 @@ class Woolly:
             conflicts_with=Memory.from_json(conflict) if conflict else None,
         )
 
-    def recall(self, query: str, limit: int = 5, include_history: bool = False) -> List[Memory]:
-        """Find the memories most relevant to ``query``, best first."""
-        r = self._request("POST", "/api/recall", {"query": query, "limit": limit, "include_all": include_history})
+    def recall(
+        self, query: str, limit: int = 5, include_history: bool = False, project: Optional[str] = None
+    ) -> List[Memory]:
+        """Find the memories most relevant to ``query``, best first.
+
+        With ``project``, search the user's memories plus that project's, and
+        leave other projects out.
+        """
+        body: Dict[str, Any] = {"query": query, "limit": limit, "include_all": include_history}
+        if project:
+            body["project"] = project
+        r = self._request("POST", "/api/recall", body)
         return [Memory.from_json(x["memory"], score=x.get("score")) for x in r.get("results") or []]
 
-    def context(self, query: str, limit: int = 5) -> str:
+    def context(self, query: str, limit: int = 5, project: Optional[str] = None) -> str:
         """Return a short note of relevant memories to add to an AI prompt.
 
         The note tells the model these are information about the user, not
         instructions. Returns an empty string when nothing is relevant.
         """
-        mems = self.recall(query, limit=limit)
+        mems = self.recall(query, limit=limit, project=project)
         if not mems:
             return ""
         lines = "\n".join("- " + m.content.strip() for m in mems)
@@ -220,8 +235,10 @@ class Woolly:
         content: Optional[str] = None,
         key: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        project: Optional[str] = None,
     ) -> Memory:
-        """Edit a memory. Only the arguments you pass are changed."""
+        """Edit a memory. Only the arguments you pass are changed. Pass
+        ``project=""`` to make a project memory apply everywhere."""
         body: Dict[str, Any] = {}
         if content is not None:
             body["content"] = content
@@ -229,6 +246,8 @@ class Woolly:
             body["key"] = key
         if tags is not None:
             body["tags"] = list(tags)
+        if project is not None:
+            body["project"] = project
         return Memory.from_json(self._request("PATCH", "/api/memories/" + urllib.parse.quote(memory_id), body))
 
     def forget(self, memory_id: str) -> Memory:

@@ -4,6 +4,8 @@
 
 - Claude Desktop can install Woolly with a double-click: download `woolly.mcpb` from the latest release. It holds Woolly for macOS, Windows and Linux.
 - Woolly is listed on the official MCP Registry as `io.github.rjcuff/woolly`.
+- Projects. Facts about a codebase can belong to that project, and facts about you stay global. Apps working in a git repo see your memories plus that project's, and nothing from other projects. Keys only clash within a project. Use `--project` on `remember`, `recall` and `list`, `project` in the API and Python package, and the project picker on the review page. See [Projects](https://usewoolly.com/docs/projects).
+- The profile only lists facts about you. Project notes are shown separately.
 
 ## 0.7.0
 

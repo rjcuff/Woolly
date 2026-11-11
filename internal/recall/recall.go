@@ -71,6 +71,13 @@ func (e *Engine) LastEmbedError() error {
 // Recall returns up to limit memories relevant to query, best first.
 // includeAll also searches superseded and conflicting memories.
 func (e *Engine) Recall(ctx context.Context, query string, limit int, includeAll bool) ([]Result, Mode, error) {
+	return e.RecallIn(ctx, query, limit, includeAll, "")
+}
+
+// RecallIn is Recall inside one project: it searches memories about the
+// user plus that project's memories, and leaves other projects out. An empty
+// project searches everything.
+func (e *Engine) RecallIn(ctx context.Context, query string, limit int, includeAll bool, project string) ([]Result, Mode, error) {
 	query = strings.TrimSpace(query)
 	if query == "" {
 		return nil, ModeKeyword, errors.New("query is empty")
@@ -78,9 +85,16 @@ func (e *Engine) Recall(ctx context.Context, query string, limit int, includeAll
 	if limit <= 0 {
 		limit = 5
 	}
-	mems, err := e.store.List(includeAll)
+	all, err := e.store.List(includeAll)
 	if err != nil {
 		return nil, ModeKeyword, err
+	}
+	project = memory.NormalizeProject(project)
+	var mems []memory.Memory
+	for i := range all {
+		if all[i].In(project) {
+			mems = append(mems, all[i])
+		}
 	}
 	if len(mems) == 0 {
 		return nil, ModeKeyword, nil
@@ -132,7 +146,7 @@ func (e *Engine) Recall(ctx context.Context, query string, limit int, includeAll
 
 func docText(m memory.Memory) string {
 	key := strings.NewReplacer(".", " ", "_", " ", "-", " ", "/", " ").Replace(m.Key)
-	return strings.TrimSpace(m.Content + " " + key + " " + strings.Join(m.Tags, " "))
+	return strings.TrimSpace(m.Content + " " + key + " " + strings.Join(m.Tags, " ") + " " + m.Project)
 }
 
 // vectors returns embeddings for every doc plus the query, embedding only

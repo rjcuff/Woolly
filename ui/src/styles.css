@@ -204,7 +204,10 @@ button.link:hover { color: var(--fg); }
 }
 
 .activity-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-.activity-bar select {
+.search-row { display: flex; gap: 8px; align-items: center; }
+.search-row .search { flex: 1; min-width: 0; }
+.chip.project { font-weight: 600; }
+.activity-bar select, .search-row select {
   font: inherit;
   font-size: 14px;
   padding: 6px 10px;

@@ -13,6 +13,7 @@ export type Memory = {
   superseded_by?: string;
   conflicts_with?: string;
   via?: string; // the app that saved it
+  project?: string; // set for facts that only matter in one project
   inTrash?: boolean; // set by the page for memories shown in the trash
 };
 
@@ -53,7 +54,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ content, key, tags, source: 'user' }),
     }),
-  update: (id: string, patch: { content?: string; key?: string; tags?: string[] }) =>
+  update: (id: string, patch: { content?: string; key?: string; tags?: string[]; project?: string }) =>
     call<Memory>(`/api/memories/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   forget: (id: string) => call<unknown>(`/api/memories/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   trash: () => call<{ trash: Memory[] }>('/api/trash').then((r) => r.trash),

@@ -46,6 +46,8 @@ Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm http
 
 **Loads by itself.** In Claude Code, every session starts with your profile and notes about the project you're in. No need to ask.
 
+**Keeps projects apart.** Notes about a codebase stay with that repo, and facts about you go everywhere. Your AI in one project never gets another project's notes.
+
 **Shows you everything.** `woolly ui` opens a page where you can search, edit and delete every memory. Or open the files yourself. Every memory notes which app saved it, and `woolly log` shows what each app saved, read and deleted.
 
 **Brings in your history.** `woolly import` pulls facts about you out of your ChatGPT and Claude exports.

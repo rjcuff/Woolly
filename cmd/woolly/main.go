@@ -50,9 +50,9 @@ func init() {
 const usage = `Woolly: local memory for your AI tools.
 
 Usage:
-  woolly remember <text> [--key k] [--tags a,b] [--source user|agent|import] [--allow-secret]
-  woolly recall <query> [-n 5] [--all] [--json]
-  woolly list [--all] [--json]
+  woolly remember <text> [--key k] [--tags a,b] [--project p] [--source user|agent|import] [--allow-secret]
+  woolly recall <query> [-n 5] [--project p] [--all] [--json]
+  woolly list [--project p] [--all] [--json]
   woolly show <id>
   woolly forget <id>           move a memory to the trash
   woolly restore <id>          bring it back
@@ -231,6 +231,7 @@ func cmdRemember(args []string) error {
 	source := fs.String("source", "user", "who said it: user, agent or import")
 	asJSON := fs.Bool("json", false, "print JSON")
 	allowSecret := fs.Bool("allow-secret", false, "save even if it looks like a password or API key")
+	project := fs.String("project", "", "only for this project, like a repo name")
 	pos, err := parse(fs, args)
 	if err != nil {
 		return err
@@ -248,7 +249,7 @@ func cmdRemember(args []string) error {
 		return err
 	}
 	res, err := a.store.Remember(memory.RememberInput{
-		Content: text, Key: *key, Tags: []string{*tags}, Source: src, AllowSensitive: *allowSecret, Via: cli,
+		Content: text, Key: *key, Tags: []string{*tags}, Source: src, AllowSensitive: *allowSecret, Via: cli, Project: *project,
 	})
 	var sensitive *memory.SensitiveError
 	if errors.As(err, &sensitive) {
@@ -270,6 +271,7 @@ func cmdRecall(args []string) error {
 	n := fs.Int("n", 5, "max results")
 	all := fs.Bool("all", false, "include superseded and conflicting memories")
 	asJSON := fs.Bool("json", false, "print JSON")
+	project := fs.String("project", "", "search your memories plus this project's, leaving other projects out")
 	pos, err := parse(fs, args)
 	if err != nil {
 		return err
@@ -279,7 +281,7 @@ func cmdRecall(args []string) error {
 	if err != nil {
 		return err
 	}
-	results, mode, err := a.engine.Recall(context.Background(), query, *n, *all)
+	results, mode, err := a.engine.RecallIn(context.Background(), query, *n, *all, *project)
 	if err != nil {
 		return err
 	}
@@ -302,6 +304,7 @@ func cmdList(args []string) error {
 	fs := newFlags("list")
 	all := fs.Bool("all", false, "include superseded and conflicting memories")
 	asJSON := fs.Bool("json", false, "print JSON")
+	project := fs.String("project", "", "only this project's memories")
 	if _, err := parse(fs, args); err != nil {
 		return err
 	}
@@ -312,6 +315,15 @@ func cmdList(args []string) error {
 	mems, err := a.store.List(*all)
 	if err != nil {
 		return err
+	}
+	if p := memory.NormalizeProject(*project); p != "" {
+		kept := mems[:0]
+		for _, m := range mems {
+			if m.Project == p {
+				kept = append(kept, m)
+			}
+		}
+		mems = kept
 	}
 	if *asJSON {
 		return printJSON(mems)
@@ -755,7 +767,7 @@ func cmdMCP(args []string) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	s := &mcp.Server{Store: a.store, Engine: a.engine, Version: version, Activity: a.log}
+	s := &mcp.Server{Store: a.store, Engine: a.engine, Version: version, Activity: a.log, Project: mcpProject()}
 	return s.Serve(ctx, os.Stdin, os.Stdout)
 }
 

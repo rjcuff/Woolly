@@ -24,7 +24,8 @@ var preference = regexp.MustCompile(`(?i)^(?:i\s+)?(?:really\s+)?(?:prefer|like|
 func Build(mems []memory.Memory) Profile {
 	var p Profile
 	for _, m := range mems {
-		if m.Status != memory.StatusActive {
+		// Project memories describe a project, not the user.
+		if m.Status != memory.StatusActive || m.Project != "" {
 			continue
 		}
 		switch {

@@ -39,6 +39,7 @@ func encode(m *Memory) []byte {
 	w("superseded_by", m.SupersededBy)
 	w("conflicts_with", m.ConflictsWith)
 	w("via", m.Via)
+	w("project", m.Project)
 	b.WriteString("---\n\n")
 	b.WriteString(strings.TrimSpace(m.Content))
 	b.WriteString("\n")
@@ -87,6 +88,8 @@ func decode(data []byte) (*Memory, error) {
 			m.ConflictsWith = v
 		case "via":
 			m.Via = v
+		case "project":
+			m.Project = NormalizeProject(v)
 		}
 	}
 	if m.ID == "" {

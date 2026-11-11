@@ -53,11 +53,11 @@ curl -X POST localhost:11435/api/recall \
 
 | Method | Path | Body |
 | --- | --- | --- |
-| `POST` | `/api/remember` | `content`, plus optional `key`, `tags`, `source` |
-| `POST` | `/api/recall` | `query`, plus optional `limit`, `include_all` |
-| `GET` | `/api/memories` | Add `?all=1` for everything |
+| `POST` | `/api/remember` | `content`, plus optional `key`, `tags`, `source`, `project` |
+| `POST` | `/api/recall` | `query`, plus optional `limit`, `include_all`, `project` |
+| `GET` | `/api/memories` | Add `?all=1` for everything, `?project=acme` for one project |
 | `GET` | `/api/memories/{id}` | |
-| `PATCH` | `/api/memories/{id}` | Any of `content`, `key`, `tags` |
+| `PATCH` | `/api/memories/{id}` | Any of `content`, `key`, `tags`, `project` |
 | `DELETE` | `/api/memories/{id}` | Moves the memory to the trash |
 | `GET` | `/api/trash` | |
 | `POST` | `/api/restore` | `id` |

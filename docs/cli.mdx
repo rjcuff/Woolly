@@ -43,6 +43,7 @@ woolly remember "Moved to Denver in October" --key user.location --tags home
 | --- | --- |
 | `--key` | Names the fact so a newer one can replace it |
 | `--tags` | Comma-separated tags |
+| `--project` | Only for this project, like a repo name. See [Projects](/docs/projects) |
 | `--source` | `user` (default), `agent` or `import` |
 | `--allow-secret` | Save even if it looks like a password or API key |
 | `--json` | Print the result as JSON |
@@ -57,6 +58,7 @@ woolly recall "where do I live" -n 3
 | --- | --- |
 | `-n` | How many results, default 5 |
 | `--all` | Include superseded and conflicting memories |
+| `--project` | Search your memories plus this project's, and leave other projects out |
 | `--json` | Print results as JSON |
 
 ## import
@@ -106,6 +108,7 @@ Forgetting moves a memory to the trash. It's only gone for good after `woolly tr
 
 ```sh
 woolly list --all
+woolly list --project acme
 ```
 
 ## log

@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/rjcuff/woolly/internal/memory"
@@ -41,5 +42,15 @@ func TestBuildAndMarkdown(t *testing.T) {
 func TestEmpty(t *testing.T) {
 	if got := Build(nil).Markdown(); got != "Woolly doesn't know anything about you yet.\n" {
 		t.Fatalf("got %q", got)
+	}
+}
+
+func TestProjectMemoriesAreLeftOut(t *testing.T) {
+	mems := []memory.Memory{
+		{Content: "Likes tea", Status: memory.StatusActive},
+		{Content: "Uses Postgres", Project: "acme", Status: memory.StatusActive},
+	}
+	if got := Build(mems).Markdown(); strings.Contains(got, "Postgres") || !strings.Contains(got, "tea") {
+		t.Fatalf("got:\n%s", got)
 	}
 }

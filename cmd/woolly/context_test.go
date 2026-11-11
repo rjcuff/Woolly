@@ -27,6 +27,21 @@ func TestBuildContext(t *testing.T) {
 	}
 }
 
+func TestBuildContextLeavesOtherProjectsOut(t *testing.T) {
+	mems := []memory.Memory{
+		{ID: "a", Content: "Uses Postgres", Project: "acme", Status: memory.StatusActive},
+		{ID: "b", Content: "Uses SQLite", Project: "notes", Status: memory.StatusActive},
+		{ID: "c", Content: "Likes tea", Status: memory.StatusActive},
+	}
+	out, ids := buildContext(mems, "acme")
+	if len(ids) != 1 || !strings.Contains(out, "Uses Postgres") || !strings.Contains(out, "Likes tea") || strings.Contains(out, "SQLite") {
+		t.Fatalf("ids %v\n%s", ids, out)
+	}
+	if out, _ := buildContext(mems, ""); strings.Contains(out, "Postgres") || strings.Contains(out, "SQLite") {
+		t.Fatalf("outside a project, project memories stay out:\n%s", out)
+	}
+}
+
 func TestBuildContextStaysUnderLimit(t *testing.T) {
 	var mems []memory.Memory
 	for i := 0; i < 2000; i++ {

@@ -43,7 +43,7 @@ Claude Code and Codex are set up through their own `claude mcp add` and `codex m
 
 In most apps, the AI has to decide to call Woolly before it knows anything about you. For Claude Code, `woolly connect` also adds a startup hook, so every session starts with your profile and the notes about the project you're in. You don't have to ask.
 
-The hook runs `woolly context`. It prints your profile and any memories that mention the current project, which is the name of the git repo or folder. It stays under Claude Code's 10,000 character limit for startup context. To see exactly what Claude Code gets, run it yourself:
+The hook runs `woolly context`. It prints your profile and the memories for the current project, which is the name of the git repo or folder. Other projects' notes are left out. See [Projects](/docs/projects). It stays under Claude Code's 10,000 character limit for startup context. To see exactly what Claude Code gets, run it yourself:
 
 ```sh
 woolly context

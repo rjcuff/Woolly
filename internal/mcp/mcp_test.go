@@ -83,3 +83,33 @@ func TestRecordsTheConnectedApp(t *testing.T) {
 		t.Fatalf("activity: %+v", entries)
 	}
 }
+
+func TestProjectScoping(t *testing.T) {
+	store, err := memory.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	store.Remember(memory.RememberInput{Content: "The notes app uses SQLite", Project: "notes"})
+	store.Remember(memory.RememberInput{Content: "Prefers short answers"})
+	s := &Server{Store: store, Engine: recall.New(store, nil, ""), Version: "test", Project: "acme"}
+	in := strings.Join([]string{
+		`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"claude-code","version":"1"}}}`,
+		`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"remember","arguments":{"content":"The acme app uses Postgres","project":"acme"}}}`,
+		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"recall","arguments":{"query":"app uses database sqlite postgres"}}}`,
+		`{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_profile","arguments":{}}}`,
+	}, "\n") + "\n"
+	var out bytes.Buffer
+	if err := s.Serve(context.Background(), strings.NewReader(in), &out); err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	if !strings.Contains(lines[0], `The current project is \"acme\"`) {
+		t.Fatalf("instructions should name the project: %s", lines[0])
+	}
+	if !strings.Contains(lines[2], "Postgres") || strings.Contains(lines[2], "SQLite") {
+		t.Fatalf("recall should leave other projects out: %s", lines[2])
+	}
+	if !strings.Contains(lines[3], "This project (acme)") || !strings.Contains(lines[3], "Prefers short answers") || strings.Contains(lines[3], "SQLite") {
+		t.Fatalf("profile: %s", lines[3])
+	}
+}

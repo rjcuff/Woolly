@@ -61,6 +61,14 @@ class WoollyTest(unittest.TestCase):
         self.assertEqual(m.via, "My notes app")
         self.assertEqual(self.w.remember("Plays chess on Sundays").memory.via, "Python app")
 
+    def test_projects(self):
+        self.w.remember("Builds with Bazel", project="monorepo")
+        self.w.remember("Builds with Make", project="tools")
+        found = self.w.recall("how does it build", project="monorepo")
+        self.assertTrue(any("Bazel" in m.content for m in found))
+        self.assertFalse(any("Make" in m.content for m in found))
+        self.assertEqual(found[0].project, "monorepo")
+
     def test_newer_fact_replaces_older(self):
         self.w.remember("Lives in Austin", key="user.city")
         r = self.w.remember("Lives in Denver", key="user.city")
