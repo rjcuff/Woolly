@@ -167,7 +167,10 @@ func TestAppsPaths(t *testing.T) {
 				got = a.Config
 			}
 		}
-		if got != filepath.FromSlash(tt.want) && got != tt.want {
+		// Paths are built with the OS separator, so a Windows path tested on
+		// macOS has forward slashes. Compare them with either separator.
+		norm := func(p string) string { return strings.ReplaceAll(p, `\`, "/") }
+		if norm(got) != norm(tt.want) {
 			t.Errorf("%s on %s: config = %q; want %q", tt.id, tt.env.GOOS, got, tt.want)
 		}
 	}

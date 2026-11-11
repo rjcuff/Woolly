@@ -14,7 +14,7 @@ export function meta(_: Route.MetaArgs) {
 
 export default function Privacy() {
   return (
-    <LegalPage title="Privacy" updated="November 10, 2026">
+    <LegalPage title="Privacy" updated="November 11, 2026">
       <p>
         Woolly is built so your memories stay on your computer. This page explains what the Woolly
         app and this website do with data.
@@ -37,7 +37,12 @@ export default function Privacy() {
 
       <h2>This website</h2>
       <ul>
-        <li>We don't use cookies, analytics or ads.</li>
+        <li>We don't use cookies or ads.</li>
+        <li>
+          We use Vercel Web Analytics to count visits. It doesn't use cookies, doesn't identify you
+          and doesn't follow you across other sites. It records things like which page you visited,
+          the site that linked you here, your country, and your browser and device type.
+        </li>
         <li>
           Your light or dark theme choice is saved in your browser's local storage. It never leaves
           your browser.
