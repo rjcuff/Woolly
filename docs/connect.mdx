@@ -25,7 +25,7 @@ Connecting Woolly (/opt/homebrew/bin/woolly)
 Restart Claude Desktop to load the change.
 ```
 
-It works with Claude Code, Claude Desktop, Cursor, VS Code and Windsurf. It only adds a `woolly` entry and keeps the rest of each config as it was. Before it changes a file, it saves a copy next to it ending in `.woolly-backup`.
+It works with Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Codex, Gemini CLI, LM Studio and opencode. It only adds a `woolly` entry and keeps the rest of each config as it was. Before it changes a file, it saves a copy next to it ending in `.woolly-backup`.
 
 | Command | What it does |
 | --- | --- |
@@ -34,7 +34,9 @@ It works with Claude Code, Claude Desktop, Cursor, VS Code and Windsurf. It only
 | `woolly connect --dry-run` | Show what would change without changing anything |
 | `woolly disconnect` | Remove Woolly from the apps again |
 
-App names: `claude-code`, `claude-desktop`, `cursor`, `vscode`, `windsurf`.
+App names: `claude-code`, `claude-desktop`, `cursor`, `vscode`, `windsurf`, `codex`, `gemini`, `lmstudio`, `opencode`.
+
+Claude Code and Codex are set up through their own `claude mcp add` and `codex mcp add` commands. The others are set up by editing their config files.
 
 If a config file has comments, Woolly won't rewrite it. It prints the lines to paste in yourself instead.
 

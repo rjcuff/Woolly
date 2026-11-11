@@ -60,13 +60,14 @@ Usage:
   woolly conflicts
   woolly resolve <id>          keep this memory as the current fact for its key
   woolly ui                    open the review page in your browser
-  woolly connect [app...]      add Woolly to Claude Code, Claude Desktop, Cursor, VS Code, Windsurf
+  woolly connect [app...]      add Woolly to Claude, Cursor, VS Code, Codex, Gemini and more
   woolly disconnect [app...]   remove it again
   woolly service install       run Woolly in the background, starting at login
   woolly service status|uninstall
   woolly serve [--proxy]       run the local HTTP API and review page (default 127.0.0.1:11435)
   woolly mcp                   run as an MCP server on stdio (for Claude, Cursor, ...)
   woolly proxy                 give memory to Ollama and OpenAI or Anthropic apps (127.0.0.1:11436)
+  woolly update [--check]      update to the latest version
   woolly doctor                check your setup
   woolly version
 
@@ -128,6 +129,8 @@ func run(args []string) error {
 		return cmdProxy(rest)
 	case "doctor":
 		return cmdDoctor(rest)
+	case "update", "upgrade":
+		return cmdUpdate(rest)
 	case "connect":
 		return cmdConnect(rest)
 	case "disconnect":

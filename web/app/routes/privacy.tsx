@@ -32,6 +32,10 @@ export default function Privacy() {
           When you connect Woolly to an AI app such as Claude or Cursor, that app can read and save
           memories. What the app does with that information is covered by its own privacy policy.
         </li>
+        <li>
+          <code>woolly update</code> contacts GitHub to check for and download a new version, only
+          when you run it. GitHub's privacy policy covers that request.
+        </li>
         <li>You can delete everything at any time by deleting the <code>~/.woolly</code> folder.</li>
       </ul>
 

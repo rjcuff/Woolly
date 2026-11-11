@@ -1,11 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
 
-- `woolly connect` adds Woolly to Claude Code, Claude Desktop, Cursor, VS Code and Windsurf in one step. It keeps the rest of each config and saves a backup first. `woolly disconnect` undoes it.
+- `woolly connect` adds Woolly to Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Codex, Gemini CLI, LM Studio and opencode in one step. It keeps the rest of each config and saves a backup first. `woolly disconnect` undoes it.
 - `woolly service install` runs Woolly in the background and starts it at login, like Ollama. It uses a LaunchAgent on macOS, a systemd user service on Linux and a startup entry on Windows, none of which need admin rights.
 - `woolly serve --proxy` runs the API, review page and proxy in one process. `--log` writes output to a file.
 - `woolly doctor` shows the background service and which apps are connected.
+- `woolly update` updates Woolly to the latest version and verifies the download. It's the only command that contacts the internet, and only when you run it.
+- The website shows the GitHub star count in the nav once it passes 100.
 
 ## 0.5.0
 

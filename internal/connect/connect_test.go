@@ -250,3 +250,81 @@ func TestConnectFollowsSymlinks(t *testing.T) {
 		t.Fatal("target file not updated")
 	}
 }
+
+func TestOpenCodeNestedFormat(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "opencode.json")
+	os.WriteFile(path, []byte(`{"theme":"dark","mcp":{"timeout":5000,"servers":{"other":{"type":"local","command":["x"]}}}}`), 0o644)
+	a := App{ID: "opencode", Name: "opencode", Config: path, Format: FormatOpenCode}
+
+	if res, err := Connect(a, "/bin/woolly", false); err != nil || res != Added {
+		t.Fatalf("connect: %v %v", res, err)
+	}
+	var cfg map[string]any
+	data, _ := os.ReadFile(path)
+	json.Unmarshal(data, &cfg)
+	mcp := cfg["mcp"].(map[string]any)
+	servers := mcp["servers"].(map[string]any)
+	w := servers["woolly"].(map[string]any)
+	if cfg["theme"] != "dark" || mcp["timeout"].(float64) != 5000 || servers["other"] == nil {
+		t.Fatalf("other settings lost: %s", data)
+	}
+	if w["type"] != "local" || w["command"].([]any)[0] != "/bin/woolly" || w["command"].([]any)[1] != "mcp" {
+		t.Fatalf("entry: %v", w)
+	}
+	if !IsConnected(a) {
+		t.Fatal("should report connected")
+	}
+	if res, _ := Disconnect(a, false); res != Removed || IsConnected(a) {
+		t.Fatal("disconnect failed")
+	}
+}
+
+func TestOpenCodeFromEmptyFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "opencode.json")
+	a := App{Config: path, Format: FormatOpenCode}
+	if _, err := Connect(a, "/bin/woolly", false); err != nil {
+		t.Fatal(err)
+	}
+	data, _ := os.ReadFile(path)
+	if !strings.Contains(string(data), `"servers"`) || !strings.Contains(string(data), `"mcp"`) {
+		t.Fatalf("got %s", data)
+	}
+}
+
+func TestNewAppsPaths(t *testing.T) {
+	home := t.TempDir()
+	env := Env{GOOS: "darwin", Home: home}
+	want := map[string]string{
+		"gemini":   filepath.Join(home, ".gemini", "settings.json"),
+		"lmstudio": filepath.Join(home, ".lmstudio", "mcp.json"),
+		"opencode": filepath.Join(home, ".config", "opencode", "opencode.json"),
+	}
+	for _, a := range Apps(env) {
+		if p, ok := want[a.ID]; ok && a.Config != p {
+			t.Errorf("%s: %s, want %s", a.ID, a.Config, p)
+		}
+	}
+	os.MkdirAll(filepath.Join(home, ".config", "opencode"), 0o755)
+	os.WriteFile(filepath.Join(home, ".config", "opencode", "opencode.jsonc"), []byte("{}"), 0o644)
+	for _, a := range Apps(env) {
+		if a.ID == "opencode" && !strings.HasSuffix(a.Config, "opencode.jsonc") {
+			t.Errorf("should prefer opencode.jsonc when it exists, got %s", a.Config)
+		}
+	}
+}
+
+func TestGeminiKeepsOtherSettings(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	os.WriteFile(path, []byte(`{"theme":"GitHub","selectedAuthType":"oauth-personal"}`), 0o644)
+	a := App{Config: path, Format: FormatMCPServers}
+	if _, err := Connect(a, "/bin/woolly", false); err != nil {
+		t.Fatal(err)
+	}
+	data, _ := os.ReadFile(path)
+	for _, s := range []string{`"theme": "GitHub"`, `"selectedAuthType": "oauth-personal"`, `"woolly"`} {
+		if !strings.Contains(string(data), s) {
+			t.Fatalf("missing %s in %s", s, data)
+		}
+	}
+}

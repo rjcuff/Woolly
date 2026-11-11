@@ -25,7 +25,13 @@ Yes. Open any file in `~/.woolly/memories` in a text editor and save it. Woolly 
 
 ## How do I update Woolly?
 
-Run the install command again:
+Run:
+
+```sh
+woolly update
+```
+
+It downloads the latest version, checks it against the published checksum, and replaces itself. If you installed with Homebrew or Go, it tells you to update that way instead. You can also run the install command again:
 
 ```sh
 curl -fsSL https://usewoolly.com/install.sh | sh

@@ -1,6 +1,7 @@
 import type { Route } from './+types/home';
 import { Link } from 'react-router';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
+import { getStars } from '@/lib/github';
 import { seo } from '@/lib/seo';
 import { appName, blueskyUrl, githubUrl, linkedinUrl, siteDescription, tagline } from '@/lib/shared';
 
@@ -23,10 +24,14 @@ export function meta(_: Route.MetaArgs) {
   ];
 }
 
-export default function Home() {
+export async function loader() {
+  return { stars: await getStars() };
+}
+
+export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex h-dvh flex-col overflow-hidden px-[max(20px,env(safe-area-inset-left))]">
-      <SiteHeader />
+      <SiteHeader stars={loaderData?.stars} />
 
       <main className="flex flex-1 items-center justify-center pb-[6vh]">
         <section className="flex w-full max-w-[640px] flex-col items-start gap-6">

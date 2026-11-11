@@ -28,7 +28,7 @@ woolly remember "I prefer short answers"
 woolly connect
 ```
 
-`woolly connect` adds Woolly to Claude Code, Claude Desktop, Cursor, VS Code and Windsurf. Now they all remember.
+`woolly connect` adds Woolly to Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Codex, Gemini CLI, LM Studio and opencode. Now they all remember.
 
 Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm https://usewoolly.com/install.ps1 | iex`, or `go install github.com/rjcuff/woolly/cmd/woolly@latest`.
 

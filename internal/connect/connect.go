@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
 )
 
 // ServerName is the name Woolly is registered under in each app.
@@ -34,6 +35,9 @@ const (
 	// FormatServers is {"servers": {"name": {"type": "stdio", "command": ...}}}.
 	// VS Code uses it.
 	FormatServers
+	// FormatOpenCode is {"mcp": {"servers": {"name": {"type": "local", "command": [...]}}}}.
+	// opencode uses it.
+	FormatOpenCode
 )
 
 // App is an AI app whose MCP config Woolly can edit.
@@ -104,7 +108,34 @@ func Apps(e Env) []App {
 			ID: "vscode", Name: "VS Code",
 			Config: filepath.Join(e.configDir(), "Code", "User", "mcp.json"), Format: FormatServers,
 		},
+		{
+			ID: "gemini", Name: "Gemini CLI",
+			Config: filepath.Join(e.Home, ".gemini", "settings.json"), Format: FormatMCPServers,
+		},
+		{
+			ID: "lmstudio", Name: "LM Studio", Restart: true,
+			Config: filepath.Join(e.Home, ".lmstudio", "mcp.json"), Format: FormatMCPServers,
+		},
+		{
+			ID: "opencode", Name: "opencode",
+			Config: openCodeConfig(e), Format: FormatOpenCode,
+		},
 	}
+}
+
+// openCodeConfig is opencode's global config. It uses ~/.config on every
+// system, and may be named opencode.jsonc.
+func openCodeConfig(e Env) string {
+	dir := filepath.Join(e.Home, ".config", "opencode")
+	if jsonc := filepath.Join(dir, "opencode.jsonc"); fileExists(jsonc) {
+		return jsonc
+	}
+	return filepath.Join(dir, "opencode.json")
+}
+
+func fileExists(p string) bool {
+	st, err := os.Stat(p)
+	return err == nil && !st.IsDir()
 }
 
 // claudeDesktopConfig finds Claude Desktop's config. The Microsoft Store build
@@ -154,6 +185,9 @@ var ErrUnreadable = errors.New("config isn't plain JSON")
 
 // Entry builds the MCP server entry for an app's format.
 func Entry(f Format, command string) map[string]any {
+	if f == FormatOpenCode {
+		return map[string]any{"type": "local", "command": []any{command, "mcp"}}
+	}
 	e := map[string]any{"command": command, "args": []any{"mcp"}}
 	if f == FormatServers {
 		e["type"] = "stdio"
@@ -161,11 +195,15 @@ func Entry(f Format, command string) map[string]any {
 	return e
 }
 
-func (f Format) key() string {
-	if f == FormatServers {
-		return "servers"
+// path is where an app's servers live in its config, outermost key first.
+func (f Format) path() []string {
+	switch f {
+	case FormatServers:
+		return []string{"servers"}
+	case FormatOpenCode:
+		return []string{"mcp", "servers"}
 	}
-	return "mcpServers"
+	return []string{"mcpServers"}
 }
 
 // Connect adds Woolly to an app's config, running it with command. With
@@ -188,7 +226,9 @@ func Connect(a App, command string, dryRun bool) (Result, error) {
 		res = Updated
 	}
 	servers[ServerName] = want
-	cfg[a.Format.key()] = servers
+	if err := setServers(cfg, a.Format, servers); err != nil {
+		return 0, fmt.Errorf("%s: %w", a.Config, err)
+	}
 	if dryRun {
 		return res, nil
 	}
@@ -212,7 +252,9 @@ func Disconnect(a App, dryRun bool) (Result, error) {
 		return Absent, nil
 	}
 	delete(servers, ServerName)
-	cfg[a.Format.key()] = servers
+	if err := setServers(cfg, a.Format, servers); err != nil {
+		return 0, fmt.Errorf("%s: %w", a.Config, err)
+	}
 	if dryRun {
 		return Removed, nil
 	}
@@ -260,15 +302,43 @@ func readConfig(path string) (map[string]any, []byte, error) {
 }
 
 func serversOf(cfg map[string]any, f Format) (map[string]any, error) {
-	raw, ok := cfg[f.key()]
-	if !ok || raw == nil {
-		return map[string]any{}, nil
+	path := f.path()
+	cur := cfg
+	for i, key := range path {
+		raw, ok := cur[key]
+		if !ok || raw == nil {
+			return map[string]any{}, nil
+		}
+		next, ok := raw.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("%q should be an object: %w", strings.Join(path[:i+1], "."), ErrUnreadable)
+		}
+		cur = next
 	}
-	servers, ok := raw.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("%q should be an object: %w", f.key(), ErrUnreadable)
+	return cur, nil
+}
+
+// setServers puts servers back at the format's path, creating parent objects
+// as needed and keeping any other keys they hold.
+func setServers(cfg map[string]any, f Format, servers map[string]any) error {
+	path := f.path()
+	cur := cfg
+	for i, key := range path[:len(path)-1] {
+		raw, ok := cur[key]
+		if !ok || raw == nil {
+			next := map[string]any{}
+			cur[key] = next
+			cur = next
+			continue
+		}
+		next, ok := raw.(map[string]any)
+		if !ok {
+			return fmt.Errorf("%q should be an object: %w", strings.Join(path[:i+1], "."), ErrUnreadable)
+		}
+		cur = next
 	}
-	return servers, nil
+	cur[path[len(path)-1]] = servers
+	return nil
 }
 
 // writeConfig saves the original file as a backup the first time, then
@@ -325,6 +395,8 @@ func writeConfig(path string, cfg map[string]any, orig []byte) error {
 
 // Snippet is the JSON to paste by hand when Woolly can't edit a config.
 func Snippet(f Format, command string) string {
-	b, _ := json.MarshalIndent(map[string]any{f.key(): map[string]any{ServerName: Entry(f, command)}}, "", "  ")
+	cfg := map[string]any{}
+	_ = setServers(cfg, f, map[string]any{ServerName: Entry(f, command)})
+	b, _ := json.MarshalIndent(cfg, "", "  ")
 	return string(b)
 }
