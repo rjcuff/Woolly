@@ -76,12 +76,12 @@ func readConversations(path string) ([]byte, error) {
 		defer rc.Close()
 		// Real exports are well under this; it stops a malicious zip from
 		// filling memory.
-		const maxSize = 2 << 30
+		const maxSize int64 = 2 << 30
 		data, err := io.ReadAll(io.LimitReader(rc, maxSize+1))
 		if err != nil {
 			return nil, err
 		}
-		if len(data) > maxSize {
+		if int64(len(data)) > maxSize {
 			return nil, errors.New("conversations.json is larger than 2 GB")
 		}
 		return data, nil
