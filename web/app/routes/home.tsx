@@ -2,6 +2,7 @@ import type { Route } from './+types/home';
 import { Link } from 'react-router';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { getStars } from '@/lib/github';
+import { integrations } from '@/lib/integrations';
 import { seo } from '@/lib/seo';
 import { appName, blueskyUrl, githubUrl, linkedinUrl, siteDescription, tagline } from '@/lib/shared';
 
@@ -48,6 +49,31 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           >
             Get started
           </Link>
+
+          <div className="mt-12 w-full [@media(max-height:600px)]:hidden">
+            <p className="text-[14px] text-fd-muted-foreground">Integrated with</p>
+            <ul className="mt-5 flex flex-wrap items-center gap-x-[18px] gap-y-5 sm:gap-x-9">
+              {integrations.map((app) => (
+                <li key={app.name} className="group relative">
+                  <Link
+                    to={app.href}
+                    aria-label={app.name}
+                    className="block text-fd-muted-foreground transition-colors hover:text-fd-foreground focus-visible:text-fd-foreground"
+                  >
+                    <svg viewBox="0 0 24 24" className="size-7 sm:size-8" fill="currentColor" aria-hidden="true">
+                      <path d={app.path} />
+                    </svg>
+                  </Link>
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-fd-foreground px-2 py-1 text-[13px] font-medium text-fd-background opacity-0 transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
+                  >
+                    {app.name}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
       </main>
 

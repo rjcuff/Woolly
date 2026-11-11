@@ -47,3 +47,10 @@ test('sitemap, robots and install script are served', async ({ request }) => {
   }
   expect(await (await request.get('/sitemap.xml')).text()).toContain('https://usewoolly.com/docs/quickstart');
 });
+
+test('integration logos name their app on hover', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Integrated with')).toBeVisible();
+  await page.getByRole('link', { name: 'Ollama' }).hover();
+  await expect(page.getByRole('tooltip', { name: 'Ollama' })).toBeVisible();
+});
