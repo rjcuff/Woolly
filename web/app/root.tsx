@@ -7,6 +7,7 @@ import {
   ScrollRestoration,
 } from 'react-router';
 import { RootProvider } from 'fumadocs-ui/provider/react-router';
+import { Analytics } from '@vercel/analytics/react';
 import type { Route } from './+types/root';
 import './app.css';
 import NotFound from './routes/not-found';
@@ -38,6 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body className="flex flex-col min-h-screen">
         <RootProvider search={{ options: { type: 'static' } }}>{children}</RootProvider>
+        <Analytics />
         <ScrollRestoration />
         <Scripts />
       </body>
