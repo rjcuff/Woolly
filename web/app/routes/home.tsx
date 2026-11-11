@@ -2,7 +2,7 @@ import type { Route } from './+types/home';
 import { Link } from 'react-router';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { seo } from '@/lib/seo';
-import { appName, blueskyUrl, githubUrl, siteDescription, tagline } from '@/lib/shared';
+import { appName, blueskyUrl, githubUrl, linkedinUrl, siteDescription, tagline } from '@/lib/shared';
 
 export function meta(_: Route.MetaArgs) {
   return [
@@ -17,7 +17,7 @@ export function meta(_: Route.MetaArgs) {
         operatingSystem: 'macOS, Linux, Windows',
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
         license: 'https://opensource.org/licenses/MIT',
-        sameAs: [githubUrl, blueskyUrl],
+        sameAs: [githubUrl, blueskyUrl, linkedinUrl],
       },
     },
   ];

@@ -17,6 +17,7 @@ export const gitConfig = {
 };
 export const githubUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
 export const blueskyUrl = 'https://bsky.app/profile/usewoolly.com';
+export const linkedinUrl = 'https://www.linkedin.com/company/usewoolly';
 
 const getContentUrl = createGetUrl(docsContentRoute);
 

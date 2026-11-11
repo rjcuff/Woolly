@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
-import { BlueskyIcon, GitHubIcon, SiteThemeToggle, Wordmark } from '@/components/brand';
-import { blueskyUrl, githubUrl } from '@/lib/shared';
+import { BlueskyIcon, GitHubIcon, LinkedInIcon, SiteThemeToggle, Wordmark } from '@/components/brand';
+import { blueskyUrl, githubUrl, linkedinUrl } from '@/lib/shared';
 
 export function SiteHeader() {
   return (
@@ -42,6 +42,9 @@ export function SiteFooter() {
         </a>
         <a href={blueskyUrl} aria-label="Bluesky" title="Woolly on Bluesky" className="hover:text-fd-foreground">
           <BlueskyIcon className="size-4" />
+        </a>
+        <a href={linkedinUrl} aria-label="LinkedIn" title="Woolly on LinkedIn" className="hover:text-fd-foreground">
+          <LinkedInIcon className="size-[15px]" />
         </a>
       </nav>
     </footer>

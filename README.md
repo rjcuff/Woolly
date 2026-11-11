@@ -10,7 +10,7 @@ Ollama runs your models. Woolly remembers for them.
 [![PyPI](https://img.shields.io/pypi/v/woolly-ai?color=111111&label=pypi)](https://pypi.org/project/woolly-ai/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-111111)](LICENSE)
 
-[Website](https://usewoolly.com) · [Docs](https://usewoolly.com/docs) · [Quickstart](https://usewoolly.com/docs/quickstart) · [Bluesky](https://bsky.app/profile/usewoolly.com)
+[Website](https://usewoolly.com) · [Docs](https://usewoolly.com/docs) · [Quickstart](https://usewoolly.com/docs/quickstart) · [Bluesky](https://bsky.app/profile/usewoolly.com) · [LinkedIn](https://www.linkedin.com/company/usewoolly)
 
 ![Woolly saving, replacing and recalling memories in a terminal](docs/demo.gif)
 
