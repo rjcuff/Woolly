@@ -115,11 +115,3 @@ button:has(> svg.lucide-check) svg {
   background: var(--color-fd-secondary);
   border: 1px solid var(--color-fd-border);
 }
-
-/* The home page is one screen. Lock it so Safari can't scroll or bounce it. */
-html.one-screen,
-html.one-screen body {
-  height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
-}

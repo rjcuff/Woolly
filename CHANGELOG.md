@@ -8,7 +8,6 @@
 - Builds for 32-bit ARM, for Raspberry Pi OS 32-bit. The install script picks it automatically.
 - `woolly doctor` shows whether learning and sync are ready.
 - Forgetting and restoring a memory now update its time, so sync knows it's the newest change.
-- The home page stays on one screen on iPhone.
 - Python package 0.3.0 adds `learn()`.
 
 ## 0.8.0
