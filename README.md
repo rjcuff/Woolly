@@ -12,7 +12,7 @@ Ollama runs your models. Woolly remembers for them.
 
 [Website](https://usewoolly.com) · [Docs](https://usewoolly.com/docs) · [Quickstart](https://usewoolly.com/docs/quickstart) · [Bluesky](https://bsky.app/profile/usewoolly.com) · [LinkedIn](https://www.linkedin.com/company/usewoolly)
 
-![Woolly saving, replacing and recalling memories in a terminal](docs/demo.gif)
+![Woolly saving notes for two projects, Claude Code loading only the acme notes at startup, and woolly log showing what each app did](docs/demo.gif)
 
 </div>
 

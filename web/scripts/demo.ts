@@ -16,26 +16,56 @@ const bin = join(root, 'bin/woolly');
 const home = mkdtempSync(join(tmpdir(), 'woolly-demo-'));
 const frames = mkdtempSync(join(tmpdir(), 'woolly-frames-'));
 
-type Step = { cmd: string; args: string[]; pause: number; tidy?: (out: string) => string };
+// A step runs one woolly command. `shown` is the command line drawn on
+// screen; leave it out for something an app does on its own, and describe
+// that with `note` instead. Every line of output is real.
+type Step = {
+  shown?: string;
+  note?: string;
+  args: string[];
+  input?: string;
+  cwd?: string;
+  pause: number;
+  clear?: boolean;
+  tidy?: (out: string) => string;
+};
 
 // IDs and dates make lines long; drop them so the demo reads at a glance.
 const short = (out: string) => out.replace(/\[\d{8}-\d{6}-[0-9a-f]{8}\] /g, '').replace(/; \d{4}-\d{2}-\d{2}\)/g, ')');
 
+// A git repo called acme, so Woolly knows which project it's in.
+const acme = join(home, 'code', 'acme');
+mkdirSync(join(acme, '.git'), { recursive: true });
+
+const cursorSaves = [
+  { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'cursor-vscode', version: '1' } } },
+  { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'remember', arguments: { content: 'acme deploys with Fly', project: 'acme' } } },
+].map((m) => JSON.stringify(m)).join('\n') + '\n';
+
 const steps: Step[] = [
-  { cmd: 'woolly remember "I live in Austin" --key user.location', args: ['remember', 'I live in Austin', '--key', 'user.location'], pause: 120, tidy: short },
-  { cmd: 'woolly remember "Moved to Denver in October" --key user.location', args: ['remember', 'Moved to Denver in October', '--key', 'user.location'], pause: 200, tidy: short },
-  { cmd: 'woolly remember "I prefer short answers"', args: ['remember', 'I prefer short answers'], pause: 120, tidy: short },
-  { cmd: 'woolly recall "where do I live"', args: ['recall', 'where do I live'], pause: 220, tidy: (o) => short(o).replace(/\n\(keyword search.*\)\n?/, '\n') },
-  { cmd: 'woolly remember "my OpenAI key is sk-proj-a8F3kQ9zLm2..."', args: ['remember', 'my OpenAI key is sk-proj-a8F3kQ9zLm2xR7tV4bN6cW1yE5'], pause: 240 },
-  { cmd: 'woolly profile', args: ['profile'], pause: 400 },
+  { shown: 'woolly remember "I prefer short answers"', args: ['remember', 'I prefer short answers'], pause: 100, tidy: short },
+  { shown: 'woolly remember "acme uses Postgres 17" --project acme', args: ['remember', 'acme uses Postgres 17', '--project', 'acme'], pause: 100, tidy: short },
+  { shown: 'woolly remember "The notes app uses SQLite" --project notes', args: ['remember', 'The notes app uses SQLite', '--project', 'notes'], pause: 200, tidy: short },
+  {
+    note: '# Open Claude Code in ~/code/acme. Before you type, it already has:',
+    args: ['context', '--app', 'claude-code'],
+    input: JSON.stringify({ cwd: acme, hook_event_name: 'SessionStart' }),
+    pause: 420,
+    clear: true,
+    tidy: (o) => o.replace(/^Notes about the user.*\n\n/, ''),
+  },
+  { note: '# Later, Cursor saves a fact for acme on its own.', args: ['mcp'], input: cursorSaves, cwd: acme, pause: 120, clear: true, tidy: () => '' },
+  { shown: 'woolly log', args: ['log'], pause: 450, tidy: (o) => o.replace(/^[A-Z][a-z]{2} \d{2} \d{2}:\d{2}  /gm, '') },
 ];
 
-function run(args: string[]): string {
+function run(step: Step): string {
   try {
-    return execFileSync(bin, args, {
+    return execFileSync(bin, step.args, {
       env: { ...process.env, WOOLLY_HOME: home, WOOLLY_NO_EMBED: '1' },
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
+      cwd: step.cwd ?? home,
+      input: step.input ?? '',
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
   } catch (e) {
     const err = e as { stdout?: string; stderr?: string };
@@ -51,6 +81,8 @@ function colorize(line: string): string {
   if (l.startsWith('Replaced older memory')) return `<span class="amber">${l}</span>`;
   if (l.startsWith('Remembered:')) return `<span class="green">Remembered:</span>${l.slice('Remembered:'.length)}`;
   if (l.startsWith('#')) return `<span class="bold">${l}</span>`;
+  const app = l.match(/^(Claude Code|Cursor|command line)(\s+)(.*)$/);
+  if (app) return `<span class="green">${app[1]}</span>${app[2]}${app[3]}`;
   return l;
 }
 
@@ -83,16 +115,21 @@ async function main() {
 
   await shot(view(['<span class="p">$</span> <span class="cursor"></span>']), 80);
   for (const step of steps) {
-    const output = (step.tidy ?? ((o) => o))(run(step.args)).trimEnd();
-    for (let i = 2; i <= step.cmd.length + 1; i += 2) {
-      const typed = escape(step.cmd.slice(0, i));
-      await shot(view([...history, `<span class="p">$</span> ${typed}<span class="cursor"></span>`]), 4);
+    if (step.clear) history = [];
+    const output = (step.tidy ?? ((o) => o))(run(step)).trimEnd();
+    if (step.note) {
+      history.push(`<span class="muted">${escape(step.note)}</span>`, '');
+      await shot(view([...history]), 90);
     }
-    history.push(`<span class="p">$</span> ${escape(step.cmd)}`);
-    history.push(...output.split('\n').map(colorize));
-    history.push('');
+    if (step.shown) {
+      for (let i = 2; i <= step.shown.length + 1; i += 2) {
+        const typed = escape(step.shown.slice(0, i));
+        await shot(view([...history, `<span class="p">$</span> ${typed}<span class="cursor"></span>`]), 4);
+      }
+      history.push(`<span class="p">$</span> ${escape(step.shown)}`);
+    }
+    if (output) history.push(...output.split('\n').map(colorize), '');
     await shot(view([...history, '<span class="p">$</span> <span class="cursor"></span>']), step.pause);
-    if (step.cmd === 'woolly recall "where do I live"') history = [];
   }
 
   await browser.close();
@@ -101,7 +138,9 @@ async function main() {
   mkdirSync(join(root, 'docs'), { recursive: true });
   execFileSync('go', ['run', './scripts/gifenc', frames, out], { cwd: root, stdio: 'inherit' });
   rmSync(home, { recursive: true, force: true });
-  rmSync(frames, { recursive: true, force: true });
+  // DEMO_KEEP_FRAMES=1 keeps the frames to look at.
+  if (process.env.DEMO_KEEP_FRAMES) console.log('frames in', frames);
+  else rmSync(frames, { recursive: true, force: true });
 }
 
 await main();
