@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Claude Desktop can install Woolly with a double-click: download `woolly.mcpb` from the latest release. It holds Woolly for macOS, Windows and Linux.
+- Woolly is listed on the official MCP Registry as `io.github.rjcuff/woolly`.
+
 ## 0.7.0
 
 - Memory that loads by itself. `woolly connect` adds a startup hook to Claude Code, so each session starts with your profile and the notes about the project you're in. `woolly context` prints what it loads. `woolly disconnect` removes the hook.

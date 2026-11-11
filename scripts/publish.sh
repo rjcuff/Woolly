@@ -10,6 +10,8 @@ repo="rjcuff/woolly"
 cd "$(dirname "$0")/.."
 
 [ -n "$(ls dist 2>/dev/null)" ] || { echo "dist/ is empty. Run: make release VERSION=$version" >&2; exit 1; }
+# scripts/mcpb.sh fills in server.json during the release build.
+git diff --quiet server.json || git commit -q -m "MCP Registry entry for $version" server.json
 [ -z "$(git status --porcelain)" ] || { echo "Commit your changes first." >&2; exit 1; }
 
 token=$(printf "protocol=https\nhost=github.com\n\n" | git credential fill 2>/dev/null | sed -n 's/^password=//p')
@@ -35,7 +37,7 @@ id=$(curl -fsS -X POST \
 for f in dist/*; do
   name=$(basename "$f")
   case "$name" in
-    *.zip) type=application/zip ;;
+    *.zip | *.mcpb) type=application/zip ;;
     *.txt) type=text/plain ;;
     *) type=application/gzip ;;
   esac
@@ -46,6 +48,7 @@ for f in dist/*; do
 done
 
 echo "Published https://github.com/$repo/releases/tag/$tag"
+echo "List this version on the MCP Registry with: mcp-publisher publish"
 
 # Update the Homebrew tap (github.com/rjcuff/homebrew-tap) if it exists.
 tap="rjcuff/homebrew-tap"

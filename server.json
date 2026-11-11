@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.rjcuff/woolly",
+  "title": "Woolly",
+  "description": "One local memory for all your AI apps. Private, plain files, open source.",
+  "websiteUrl": "https://usewoolly.com",
+  "repository": {
+    "url": "https://github.com/rjcuff/woolly",
+    "source": "github"
+  },
+  "version": "0.7.0",
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/rjcuff/woolly/releases/download/v0.7.0/woolly.mcpb",
+      "fileSha256": "92c7f120ebbf3ed1dc97e55d28f76096522090f6671da283113823154ec73572",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

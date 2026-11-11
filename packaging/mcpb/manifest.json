@@ -1,0 +1,36 @@
+{
+  "manifest_version": "0.3",
+  "name": "woolly",
+  "display_name": "Woolly",
+  "version": "VERSION",
+  "description": "One memory for all your AI apps. Local, private, open source.",
+  "long_description": "Woolly gives Claude, Cursor, Ollama and your own apps one shared memory that lives on your computer. Memories are plain Markdown files in ~/.woolly that you can read and edit. Newer facts replace older ones, passwords and keys are refused, and nothing ever leaves your computer.",
+  "author": { "name": "Ryan Cuff", "url": "https://github.com/rjcuff" },
+  "homepage": "https://usewoolly.com",
+  "documentation": "https://usewoolly.com/docs",
+  "support": "https://github.com/rjcuff/woolly/issues",
+  "repository": { "type": "git", "url": "https://github.com/rjcuff/woolly" },
+  "license": "MIT",
+  "icon": "icon.png",
+  "keywords": ["memory", "local", "privacy", "ollama", "profile"],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/run.sh",
+    "mcp_config": {
+      "command": "/bin/sh",
+      "args": ["${__dirname}/server/run.sh", "mcp"],
+      "platform_overrides": {
+        "win32": { "command": "${__dirname}/server/woolly.exe", "args": ["mcp"] }
+      }
+    }
+  },
+  "tools": [
+    { "name": "remember", "description": "Save a fact about the user" },
+    { "name": "recall", "description": "Search the user's memories" },
+    { "name": "get_profile", "description": "A summary of what Woolly knows about the user" },
+    { "name": "list_memories", "description": "List every current memory" },
+    { "name": "forget", "description": "Move a memory to the trash" },
+    { "name": "resolve_conflict", "description": "Keep one version of a fact that disagrees" }
+  ],
+  "compatibility": { "platforms": ["darwin", "linux", "win32"] }
+}

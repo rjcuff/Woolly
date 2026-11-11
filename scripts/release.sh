@@ -30,5 +30,6 @@ for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 wi
 done
 
 (cd dist && shasum -a 256 woolly_* > checksums.txt)
+scripts/mcpb.sh "$version"
 echo "Built woolly $version into dist/"
 ls -1 dist
