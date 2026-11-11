@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/rjcuff/woolly/internal/activity"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/profile"
 	"github.com/rjcuff/woolly/internal/recall"
@@ -33,7 +34,10 @@ type Server struct {
 	Store   *memory.Store
 	Engine  *recall.Engine
 	Version string
+	// Activity, if set, records what the connected app does.
+	Activity *activity.Log
 
+	app   string // the connected app, from initialize
 	outMu sync.Mutex
 	out   io.Writer
 }
@@ -113,8 +117,13 @@ func (s *Server) dispatch(ctx context.Context, req request) (any, *rpcError) {
 	case "initialize":
 		var p struct {
 			ProtocolVersion string `json:"protocolVersion"`
+			ClientInfo      struct {
+				Name  string `json:"name"`
+				Title string `json:"title"`
+			} `json:"clientInfo"`
 		}
 		_ = json.Unmarshal(req.Params, &p)
+		s.app = activity.AppName(p.ClientInfo.Name, p.ClientInfo.Title)
 		version := supportedVersions[0]
 		for _, v := range supportedVersions {
 			if v == p.ProtocolVersion {
@@ -238,10 +247,11 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			}
 			src = parsed
 		}
-		res, err := s.Store.Remember(memory.RememberInput{Content: a.Content, Key: a.Key, Tags: toStrings(a.Tags), Source: src})
+		res, err := s.Store.Remember(memory.RememberInput{Content: a.Content, Key: a.Key, Tags: toStrings(a.Tags), Source: src, Via: s.appName()})
 		if err != nil {
 			return "", err
 		}
+		s.log("remember", []string{res.Memory.ID}, "", 0)
 		return DescribeRemember(res), nil
 
 	case "recall":
@@ -256,6 +266,11 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 		if err != nil {
 			return "", err
 		}
+		ids := make([]string, len(results))
+		for i, r := range results {
+			ids[i] = r.Memory.ID
+		}
+		s.log("recall", ids, a.Query, len(results))
 		if len(results) == 0 {
 			return "No matching memories.", nil
 		}
@@ -272,6 +287,7 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 		if err != nil {
 			return "", err
 		}
+		s.log("profile", nil, "", len(mems))
 		return notesHeader + profile.Build(mems).Markdown(), nil
 
 	case "list_memories":
@@ -283,6 +299,7 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 		if err != nil {
 			return "", err
 		}
+		s.log("list", nil, "", len(mems))
 		if len(mems) == 0 {
 			return "No memories yet.", nil
 		}
@@ -302,6 +319,7 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 		if err != nil {
 			return "", err
 		}
+		s.log("forget", []string{m.ID}, "", 0)
 		return "Moved to trash (the user can restore it): " + m.Content, nil
 
 	case "resolve_conflict":
@@ -313,9 +331,21 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 		if err != nil {
 			return "", err
 		}
+		s.log("resolve", []string{kept.ID}, "", len(replaced))
 		return fmt.Sprintf("Kept %q as the current fact; replaced %d other memories.", kept.Content, len(replaced)), nil
 	}
 	return "", fmt.Errorf("unknown tool %q", name)
+}
+
+func (s *Server) appName() string {
+	if s.app == "" {
+		return "MCP app"
+	}
+	return s.app
+}
+
+func (s *Server) log(action string, ids []string, query string, count int) {
+	s.Activity.Add(activity.Entry{App: s.appName(), Action: action, IDs: ids, Query: query, Count: count})
 }
 
 // notesHeader frames recalled memories as data. A memory is information

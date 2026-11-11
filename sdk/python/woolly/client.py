@@ -36,6 +36,7 @@ class Memory:
     tags: List[str] = field(default_factory=list)
     superseded_by: Optional[str] = None
     conflicts_with: Optional[str] = None
+    via: Optional[str] = None
     score: Optional[float] = None
 
     @classmethod
@@ -51,6 +52,7 @@ class Memory:
             tags=list(d.get("tags") or []),
             superseded_by=d.get("superseded_by") or None,
             conflicts_with=d.get("conflicts_with") or None,
+            via=d.get("via") or None,
             score=score,
         )
 
@@ -102,6 +104,7 @@ class Woolly:
         token: Optional[str] = None,
         home: Optional[str] = None,
         timeout: float = 10.0,
+        app: str = "Python app",
     ):
         address = address or os.environ.get("WOOLLY_HOST") or DEFAULT_ADDRESS
         if "://" not in address:
@@ -110,6 +113,7 @@ class Woolly:
         self.home = Path(home or os.environ.get("WOOLLY_HOME") or Path.home() / ".woolly").expanduser()
         self._token = token
         self.timeout = timeout
+        self.app = app
 
     @property
     def token(self) -> Optional[str]:
@@ -124,6 +128,8 @@ class Woolly:
             req.add_header("Content-Type", "application/json")
         if self.token:
             req.add_header("Authorization", "Bearer " + self.token)
+        if self.app:
+            req.add_header("X-Woolly-Client", self.app)
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as res:
                 payload = res.read().decode()

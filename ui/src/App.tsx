@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { api, type Memory, splitTags } from './api';
+import { type Activity, api, type Memory, splitTags } from './api';
 
-type View = 'current' | 'conflicts' | 'all' | 'trash' | 'profile';
+type View = 'current' | 'conflicts' | 'all' | 'trash' | 'activity' | 'profile';
 
 const views: { id: View; label: string }[] = [
   { id: 'current', label: 'Memories' },
   { id: 'conflicts', label: 'Conflicts' },
   { id: 'all', label: 'History' },
   { id: 'trash', label: 'Trash' },
+  { id: 'activity', label: 'Activity' },
   { id: 'profile', label: 'Profile' },
 ];
 
@@ -20,6 +21,8 @@ export function App() {
   const [conflictCount, setConflictCount] = useState(0);
   const [byId, setById] = useState<Map<string, Memory>>(new Map());
   const [profileText, setProfileText] = useState('');
+  const [activity, setActivity] = useState<Activity[]>([]);
+  const [trashById, setTrashById] = useState<Map<string, Memory>>(new Map());
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<Notice>(null);
 
@@ -35,6 +38,10 @@ export function App() {
       setConflictCount(conflicts.length);
       if (view === 'profile') {
         setProfileText(await api.profile());
+      } else if (view === 'activity') {
+        const [log, trash] = await Promise.all([api.activity(), api.trash()]);
+        setActivity(log);
+        setTrashById(new Map(trash.map((m) => [m.id, m])));
       } else if (view === 'trash') {
         setItems((await api.trash()).map((m) => ({ ...m, inTrash: true })));
       } else if (view === 'conflicts') {
@@ -107,6 +114,8 @@ export function App() {
 
         {view === 'profile' ? (
           <ProfileView text={profileText} onCopied={() => flash({ kind: 'ok', text: 'Copied' })} />
+        ) : view === 'activity' ? (
+          loading ? null : <ActivityView entries={activity} find={(id) => byId.get(id) ?? trashById.get(id)} />
         ) : (
           <>
             {view === 'current' && <AddForm onAdd={(c, k, t) => run(() => api.remember(c, k, t), 'Saved')} />}
@@ -283,6 +292,7 @@ function MemoryRow({
           </span>
         ))}
         <span>{sourceLabel(m.source)}</span>
+        {m.via && <span>via {m.via}</span>}
         <span>{date}</span>
         {m.status === 'superseded' && <span className="status">Replaced{replacedBy ? ` by “${replacedBy.content}”` : ''}</span>}
       </div>
@@ -344,6 +354,82 @@ function TrashBar({ onEmpty }: { onEmpty: () => Promise<boolean> }) {
 
 function sourceLabel(s: Memory['source']) {
   return s === 'user' ? 'You said' : s === 'import' ? 'Imported' : 'AI guessed';
+}
+
+const verbs: Record<string, string> = {
+  remember: 'Saved',
+  recall: 'Searched',
+  profile: 'Read your profile',
+  list: 'Listed all memories',
+  context: 'Loaded your profile at startup',
+  update: 'Edited',
+  forget: 'Deleted',
+  restore: 'Restored',
+  resolve: 'Settled a conflict, keeping',
+  empty_trash: 'Emptied the trash',
+  import: 'Imported',
+};
+
+function describeEntry(e: Activity, find: (id: string) => Memory | undefined) {
+  const verb = verbs[e.action] ?? e.action;
+  const first = e.ids?.[0];
+  const subject = first ? (find(first)?.content ?? 'a memory that was deleted') : '';
+  switch (e.action) {
+    case 'remember':
+    case 'update':
+    case 'forget':
+    case 'restore':
+    case 'resolve':
+      return `${verb} “${subject}”`;
+    case 'recall':
+      return e.query ? `${verb} for “${e.query}”, got ${e.count ?? 0}` : `Read ${e.count ?? 0} memories`;
+    case 'import':
+      return `${verb} ${e.count ?? 0} memories`;
+    case 'empty_trash':
+      return `${verb} (${e.count ?? 0})`;
+    case 'context':
+      return e.ids?.length ? `${verb}, plus ${e.ids.length} about this project` : verb;
+  }
+  return verb;
+}
+
+function ActivityView({ entries, find }: { entries: Activity[]; find: (id: string) => Memory | undefined }) {
+  const [app, setApp] = useState('');
+  const apps = useMemo(() => [...new Set(entries.map((e) => e.app))].sort(), [entries]);
+  const shown = app ? entries.filter((e) => e.app === app) : entries;
+  if (entries.length === 0) {
+    return <p className="empty">No activity yet. When an app saves, reads or deletes a memory, it shows up here.</p>;
+  }
+  return (
+    <section className="activity">
+      <div className="activity-bar">
+        <p className="hint">What each app saved, read and deleted. This log stays on your computer.</p>
+        {apps.length > 1 && (
+          <select aria-label="App" value={app} onChange={(e) => setApp(e.target.value)}>
+            <option value="">All apps</option>
+            {apps.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+      <ul className="list">
+        {shown.map((e, i) => (
+          <li key={`${e.time}-${i}`} className="row log">
+            <div className="content">{describeEntry(e, find)}</div>
+            <div className="meta">
+              <span className="chip">{e.app}</span>
+              <span>
+                {new Date(e.time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 function ProfileView({ text, onCopied }: { text: string; onCopied: () => void }) {

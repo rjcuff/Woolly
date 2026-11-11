@@ -176,7 +176,8 @@ func printRow(mark, name, msg string) {
 	fmt.Printf("  %s %-15s %s\n", mark, name, msg)
 }
 
-// claudeCode connects Claude Code through its own CLI, for every project.
+// claudeCode connects Claude Code through its own CLI, for every project,
+// and adds a startup hook so each session begins with what Woolly knows.
 // It reports whether it did anything.
 func claudeCode(command string, remove, dryRun, explicit bool) bool {
 	const name = "Claude Code"
@@ -190,36 +191,67 @@ func claudeCode(command string, remove, dryRun, explicit bool) bool {
 		return false
 	}
 	connected := exec.Command(claude, "mcp", "get", connect.ServerName).Run() == nil
+	res := connect.Unchanged
 	switch {
 	case remove && !connected:
-		printRow("✓", name, connect.Absent.String())
-		return true
+		res = connect.Absent
 	case !remove && connected:
-		printRow("✓", name, connect.Unchanged.String())
-		return true
 	case dryRun && remove:
-		printRow("✓", name, describe(connect.Removed, true))
-		return true
+		res = connect.Removed
 	case dryRun:
-		printRow("✓", name, describe(connect.Added, true))
-		return true
+		res = connect.Added
+	default:
+		var cmd *exec.Cmd
+		if remove {
+			cmd = exec.Command(claude, "mcp", "remove", connect.ServerName, "--scope", "user")
+			res = connect.Removed
+		} else {
+			cmd = exec.Command(claude, "mcp", "add", "--scope", "user", connect.ServerName, "--", command, "mcp")
+			res = connect.Added
+		}
+		if out, err := cmd.CombinedOutput(); err != nil {
+			printRow("!", name, fmt.Sprintf("claude mcp failed: %s", strings.TrimSpace(string(out))))
+			return false
+		}
 	}
-	var cmd *exec.Cmd
-	if remove {
-		cmd = exec.Command(claude, "mcp", "remove", connect.ServerName, "--scope", "user")
-	} else {
-		cmd = exec.Command(claude, "mcp", "add", "--scope", "user", connect.ServerName, "--", command, "mcp")
-	}
-	if out, err := cmd.CombinedOutput(); err != nil {
-		printRow("!", name, fmt.Sprintf("claude mcp failed: %s", strings.TrimSpace(string(out))))
-		return false
-	}
-	if remove {
-		printRow("✓", name, connect.Removed.String())
-	} else {
-		printRow("✓", name, connect.Added.String())
-	}
+	printRow("✓", name, describe(res, dryRun))
+	startupHook(command, remove, dryRun)
 	return true
+}
+
+// startupHook adds or removes the Claude Code hook that runs `woolly context`
+// when a session starts.
+func startupHook(command string, remove, dryRun bool) {
+	const name = "  at startup"
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+	path := connect.ClaudeSettings(home)
+	var res connect.Result
+	if remove {
+		res, err = connect.RemoveStartupHook(path, dryRun)
+	} else {
+		res, err = connect.AddStartupHook(path, command, dryRun)
+	}
+	switch {
+	case errors.Is(err, connect.ErrUnreadable):
+		printRow("!", name, fmt.Sprintf("can't safely edit %s. To load your profile at startup, add a SessionStart hook that runs:\n      %s", path, connect.HookCommand(command)))
+	case err != nil:
+		printRow("!", name, err.Error())
+	case remove && res == connect.Absent:
+		printRow("✓", name, "no startup hook")
+	case remove && dryRun:
+		printRow("✓", name, "would remove the startup hook")
+	case remove:
+		printRow("✓", name, "startup hook removed")
+	default:
+		msg := "loads your profile when a session starts"
+		if dryRun && res != connect.Unchanged {
+			msg = "would load your profile when a session starts"
+		}
+		printRow("✓", name, msg)
+	}
 }
 
 // codex connects the Codex CLI through `codex mcp add`. Codex keeps servers

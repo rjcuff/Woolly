@@ -65,4 +65,16 @@ curl -X POST localhost:11435/api/recall \
 | `GET` | `/api/profile` | Add `?format=markdown` for Markdown |
 | `GET` | `/api/conflicts` | |
 | `POST` | `/api/resolve` | `keep_id` |
+| `GET` | `/api/activity` | Add `?app=cursor` for one app, `?limit=50` for fewer |
 | `GET` | `/api/version` | |
+
+## Name your app
+
+Send an `X-Woolly-Client` header with your app's name. Memories you save show "via" that name, and your app shows up by name in the activity log.
+
+```sh
+curl -s localhost:11435/api/remember \
+  -H "Authorization: Bearer $(cat ~/.woolly/token)" \
+  -H "X-Woolly-Client: My notes app" \
+  -d '{"content": "Reads on the train"}'
+```

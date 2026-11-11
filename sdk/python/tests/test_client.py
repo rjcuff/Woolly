@@ -56,6 +56,11 @@ class WoollyTest(unittest.TestCase):
         self.assertTrue(any("Miso" in m.content for m in found))
         self.assertIsNotNone(found[0].score)
 
+    def test_app_name_is_recorded(self):
+        m = Woolly(address=self.address, home=self.home, app="My notes app").remember("Reads on the train").memory
+        self.assertEqual(m.via, "My notes app")
+        self.assertEqual(self.w.remember("Plays chess on Sundays").memory.via, "Python app")
+
     def test_newer_fact_replaces_older(self):
         self.w.remember("Lives in Austin", key="user.city")
         r = self.w.remember("Lives in Denver", key="user.city")

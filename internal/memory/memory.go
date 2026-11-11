@@ -66,6 +66,8 @@ type Memory struct {
 	UpdatedAt     time.Time `json:"updated_at"`
 	SupersededBy  string    `json:"superseded_by,omitempty"`
 	ConflictsWith string    `json:"conflicts_with,omitempty"`
+	// Via is the app that saved the memory, like "Cursor" or "command line".
+	Via string `json:"via,omitempty"`
 
 	file string // path on disk; empty until saved
 }
@@ -113,4 +115,13 @@ func newID(t time.Time) string {
 	var b [4]byte
 	_, _ = rand.Read(b[:])
 	return t.UTC().Format("20060102-150405") + "-" + hex.EncodeToString(b[:])
+}
+
+// CleanApp tidies an app name from a client: one line, at most 40 characters.
+func CleanApp(s string) string {
+	s = strings.Join(strings.Fields(s), " ")
+	if r := []rune(s); len(r) > 40 {
+		s = string(r[:40])
+	}
+	return s
 }

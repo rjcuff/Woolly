@@ -196,6 +196,8 @@ type RememberInput struct {
 	Source  Source   // defaults to SourceUser
 	// AllowSensitive saves the memory even if it looks like it holds a secret.
 	AllowSensitive bool
+	// Via names the app saving the memory.
+	Via string
 }
 
 // RememberResult reports what Remember did.
@@ -270,6 +272,7 @@ func (s *Store) Remember(in RememberInput) (*RememberResult, error) {
 	m := &Memory{
 		ID: newID(now), Content: content, Key: key, Tags: tags,
 		Source: src, Status: StatusActive, CreatedAt: now, UpdatedAt: now,
+		Via: CleanApp(in.Via),
 	}
 	res := &RememberResult{}
 

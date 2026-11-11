@@ -42,7 +42,9 @@ Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm http
 
 **Lets you decide.** If an AI guesses something that contradicts what you said, your version stays and the guess is flagged for you to review.
 
-**Shows you everything.** `woolly ui` opens a page where you can search, edit and delete every memory. Or open the files yourself.
+**Loads by itself.** In Claude Code, every session starts with your profile and notes about the project you're in. No need to ask.
+
+**Shows you everything.** `woolly ui` opens a page where you can search, edit and delete every memory. Or open the files yourself. Every memory notes which app saved it, and `woolly log` shows what each app saved, read and deleted.
 
 **Brings in your history.** `woolly import` pulls facts about you out of your ChatGPT and Claude exports.
 
@@ -81,6 +83,7 @@ woolly remember "Moved to Denver" --key user.location   # a newer fact with the 
 woolly recall "where do I live"
 woolly profile          # a summary of what Woolly knows about you
 woolly ui               # review and edit memories in your browser
+woolly log              # what each app saved, read and deleted
 woolly import chatgpt ~/Downloads/export.zip --dry-run
 woolly forget <id>      # moves it to the trash; undo with woolly restore <id>
 woolly proxy            # memory for Ollama, OpenAI and Anthropic apps

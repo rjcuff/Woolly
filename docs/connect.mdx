@@ -17,6 +17,7 @@ Woolly finds the AI apps on your computer and adds itself to each one:
 Connecting Woolly (/opt/homebrew/bin/woolly)
 
   ✓ Claude Code     connected
+  ✓   at startup    loads your profile when a session starts
   ✓ Claude Desktop  connected
   ✓ Cursor          connected
   - Windsurf        not found
@@ -38,6 +39,18 @@ App names: `claude-code`, `claude-desktop`, `cursor`, `vscode`, `windsurf`, `cod
 
 Claude Code and Codex are set up through their own `claude mcp add` and `codex mcp add` commands. The others are set up by editing their config files.
 
+## Memory that loads by itself
+
+In most apps, the AI has to decide to call Woolly before it knows anything about you. For Claude Code, `woolly connect` also adds a startup hook, so every session starts with your profile and the notes about the project you're in. You don't have to ask.
+
+The hook runs `woolly context`. It prints your profile and any memories that mention the current project, which is the name of the git repo or folder. It stays under Claude Code's 10,000 character limit for startup context. To see exactly what Claude Code gets, run it yourself:
+
+```sh
+woolly context
+```
+
+The hook is saved in `~/.claude/settings.json`, and `woolly disconnect` removes it. If you'd rather not have it, delete the `SessionStart` entry that runs `woolly context`.
+
 If a config file has comments, Woolly won't rewrite it. It prints the lines to paste in yourself instead.
 
 ## Set it up by hand
@@ -47,7 +60,22 @@ Prefer to edit the configs yourself, or using another MCP app? Here's what `wool
 ### Claude Code
 
 ```sh
-claude mcp add woolly -- woolly mcp
+claude mcp add --scope user woolly -- woolly mcp
+```
+
+To load your profile at startup, add this to `~/.claude/settings.json`:
+
+```json title="~/.claude/settings.json"
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [{ "type": "command", "command": "woolly context --app claude-code", "timeout": 10 }]
+      }
+    ]
+  }
+}
 ```
 
 ### Claude Desktop

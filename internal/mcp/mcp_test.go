@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/rjcuff/woolly/internal/activity"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/recall"
 )
@@ -53,5 +54,32 @@ func TestHandshakeRememberRecall(t *testing.T) {
 	}
 	if resps[4]["error"].(map[string]any)["code"].(float64) != -32601 {
 		t.Fatalf("expected method-not-found: %s", lines[4])
+	}
+}
+
+func TestRecordsTheConnectedApp(t *testing.T) {
+	home := t.TempDir()
+	store, err := memory.Open(home + "/memories")
+	if err != nil {
+		t.Fatal(err)
+	}
+	log := activity.Open(home)
+	s := &Server{Store: store, Engine: recall.New(store, nil, ""), Version: "test", Activity: log}
+	in := strings.Join([]string{
+		`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"cursor-vscode","version":"1"}}}`,
+		`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"remember","arguments":{"content":"Uses pnpm"}}}`,
+		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"recall","arguments":{"query":"pnpm"}}}`,
+	}, "\n") + "\n"
+	var out bytes.Buffer
+	if err := s.Serve(context.Background(), strings.NewReader(in), &out); err != nil {
+		t.Fatal(err)
+	}
+	mems, _ := store.List(false)
+	if len(mems) != 1 || mems[0].Via != "Cursor" {
+		t.Fatalf("via: %+v", mems)
+	}
+	entries, _ := log.Recent(10, "")
+	if len(entries) != 2 || entries[0].Action != "recall" || entries[0].Query != "pnpm" || entries[1].App != "Cursor" {
+		t.Fatalf("activity: %+v", entries)
 	}
 }

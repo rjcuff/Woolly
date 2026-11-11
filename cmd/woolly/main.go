@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rjcuff/woolly/internal/activity"
+	"github.com/rjcuff/woolly/internal/connect"
 	"github.com/rjcuff/woolly/internal/importer"
 	"github.com/rjcuff/woolly/internal/mcp"
 	"github.com/rjcuff/woolly/internal/memory"
@@ -58,6 +60,8 @@ Usage:
   woolly import <chatgpt|claude> <export.zip> [--dry-run]
   woolly profile [--json]       summary of everything Woolly knows about you
   woolly conflicts
+  woolly log [--app name] [-n 50]  what each app saved, read and deleted
+  woolly context               print what Woolly knows, for an app to read at startup
   woolly resolve <id>          keep this memory as the current fact for its key
   woolly ui                    open the review page in your browser
   woolly connect [app...]      add Woolly to Claude, Cursor, VS Code, Codex, Gemini and more
@@ -117,6 +121,10 @@ func run(args []string) error {
 		return cmdTrash(rest)
 	case "conflicts":
 		return cmdConflicts(rest)
+	case "log", "activity":
+		return cmdLog(rest)
+	case "context":
+		return cmdContext(rest)
 	case "resolve":
 		return cmdResolve(rest)
 	case "ui":
@@ -158,6 +166,16 @@ type app struct {
 	store  *memory.Store
 	engine *recall.Engine
 	ollama *ollama.Client
+	log    *activity.Log
+}
+
+var importName = map[string]string{"chatgpt": "ChatGPT import", "claude": "Claude import"}
+
+// cli is how the command line shows up in the activity log.
+const cli = "command line"
+
+func (a *app) record(action string, ids []string, count int) {
+	a.log.Add(activity.Entry{App: cli, Action: action, IDs: ids, Count: count})
 }
 
 func open() (*app, error) {
@@ -175,7 +193,7 @@ func open() (*app, error) {
 		emb = nil
 	}
 	engine := recall.New(store, emb, filepath.Join(h, "index", "embeddings.json"))
-	return &app{home: h, store: store, engine: engine, ollama: oc}, nil
+	return &app{home: h, store: store, engine: engine, ollama: oc, log: activity.Open(h)}, nil
 }
 
 // parse parses flags that may appear before, between or after positional args.
@@ -230,7 +248,7 @@ func cmdRemember(args []string) error {
 		return err
 	}
 	res, err := a.store.Remember(memory.RememberInput{
-		Content: text, Key: *key, Tags: []string{*tags}, Source: src, AllowSensitive: *allowSecret,
+		Content: text, Key: *key, Tags: []string{*tags}, Source: src, AllowSensitive: *allowSecret, Via: cli,
 	})
 	var sensitive *memory.SensitiveError
 	if errors.As(err, &sensitive) {
@@ -239,6 +257,7 @@ func cmdRemember(args []string) error {
 	if err != nil {
 		return err
 	}
+	a.record("remember", []string{res.Memory.ID}, 0)
 	if *asJSON {
 		return printJSON(res)
 	}
@@ -342,6 +361,7 @@ func cmdForget(args []string) error {
 	if err != nil {
 		return err
 	}
+	a.record("forget", []string{m.ID}, 0)
 	fmt.Println("Moved to trash:", m.Content)
 	fmt.Println("Undo with: woolly restore", m.ID)
 	return nil
@@ -360,6 +380,7 @@ func cmdRestore(args []string) error {
 	if err != nil {
 		return err
 	}
+	a.record("restore", []string{m.ID}, 0)
 	fmt.Println("Restored:", m.Content)
 	return nil
 }
@@ -379,6 +400,7 @@ func cmdTrash(args []string) error {
 		if err != nil {
 			return err
 		}
+		a.record("empty_trash", nil, n)
 		fmt.Printf("Permanently deleted %d memories.\n", n)
 		return nil
 	}
@@ -436,6 +458,7 @@ func cmdImport(args []string) error {
 	for _, c := range found {
 		res, err := a.store.Remember(memory.RememberInput{
 			Content: c.Content, Key: c.Key, Tags: append([]string{provider}, c.Tags...), Source: memory.SourceImport,
+			Via: importName[provider],
 		})
 		var sensitive *memory.SensitiveError
 		var injected *memory.InjectionError
@@ -455,6 +478,7 @@ func cmdImport(args []string) error {
 			added++
 		}
 	}
+	a.log.Add(activity.Entry{App: importName[provider], Action: "import", Count: added})
 	fmt.Printf("Imported %d new memories (%d already known).\n", added, dupes)
 	if blocked > 0 {
 		fmt.Printf("Skipped %d that looked like passwords, keys or instructions to an AI.\n", blocked)
@@ -523,6 +547,7 @@ func cmdResolve(args []string) error {
 	if err != nil {
 		return err
 	}
+	a.record("resolve", []string{kept.ID}, len(replaced))
 	fmt.Println("Current fact:", kept.Content)
 	for _, r := range replaced {
 		fmt.Println("Replaced:", r.Content)
@@ -574,7 +599,7 @@ func cmdServe(args []string) error {
 	fmt.Fprintf(os.Stderr, "Open the review page with `woolly ui`. API token: %s\n", filepath.Join(a.home, "token"))
 
 	errc := make(chan error, 2)
-	go func() { errc <- server.ServeListener(ln, server.Handler(a.store, a.engine, version, token)) }()
+	go func() { errc <- server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.log)) }()
 	if *withProxy {
 		srv, pln, err := startProxy(a, defaultProxyOptions())
 		if err != nil {
@@ -614,7 +639,7 @@ func cmdUI(args []string) error {
 	}
 	fmt.Printf("Woolly review page: %s\nPress Ctrl+C to stop.\n", url)
 	_ = openBrowser(link)
-	return server.ServeListener(ln, server.Handler(a.store, a.engine, version, token))
+	return server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.log))
 }
 
 func openBrowser(url string) error {
@@ -702,7 +727,8 @@ func startProxy(a *app, o proxyOptions) (*http.Server, net.Listener, error) {
 		Store: a.store, Engine: a.engine,
 		Ollama: targets["ollama"], OpenAI: targets["openai"], Anthropic: targets["anthropic"],
 		Limit: o.limit, Save: o.save,
-		Log: log.New(os.Stderr, "woolly proxy: ", 0),
+		Log:      log.New(os.Stderr, "woolly proxy: ", 0),
+		Activity: a.log,
 	}
 	ln, err := net.Listen("tcp", o.addr)
 	if err != nil {
@@ -729,7 +755,7 @@ func cmdMCP(args []string) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	s := &mcp.Server{Store: a.store, Engine: a.engine, Version: version}
+	s := &mcp.Server{Store: a.store, Engine: a.engine, Version: version, Activity: a.log}
 	return s.Serve(ctx, os.Stdin, os.Stdout)
 }
 
@@ -794,6 +820,12 @@ func cmdDoctor(args []string) error {
 	}
 	if len(connected)+len(missing) == 0 {
 		fmt.Println("  no MCP apps found (Claude Code is checked by `woolly connect`)")
+	}
+	if h, err := os.UserHomeDir(); err == nil && connect.HasStartupHook(connect.ClaudeSettings(h)) {
+		fmt.Println("  Claude Code loads your profile at startup")
+	}
+	if n, _ := a.log.Recent(0, ""); len(n) > 0 {
+		fmt.Printf("\nActivity: %d entries in %s (see `woolly log`)\n", len(n), a.log.Path())
 	}
 	return nil
 }

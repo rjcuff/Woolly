@@ -17,6 +17,8 @@ description: Everything the woolly command can do.
 | `woolly ui` | Open the review page in your browser |
 | `woolly conflicts` | Review facts that disagree |
 | `woolly resolve <id>` | Keep this version as the current fact |
+| `woolly log` | What each app saved, read and deleted |
+| `woolly context` | Print your profile and notes about the current project, for an app to read at startup |
 | `woolly connect [app...]` | Add Woolly to your AI apps. See [Connect your apps](/docs/connect) |
 | `woolly disconnect [app...]` | Remove Woolly from your AI apps |
 | `woolly service install` | Run Woolly in the background and start it at login |
@@ -105,6 +107,31 @@ Forgetting moves a memory to the trash. It's only gone for good after `woolly tr
 ```sh
 woolly list --all
 ```
+
+## log
+
+```sh
+woolly log
+```
+
+```txt
+Nov 11 09:12  Claude Code    loaded your profile at startup, plus 2 about this project
+Nov 11 09:14  Cursor         searched for "database setup", got 3
+Nov 11 09:15  Cursor         saved Uses Postgres 17 for the acme app
+Nov 11 10:02  command line   deleted Lives in Austin
+```
+
+Shows the newest first. `--app cursor` shows one app, `-n 200` shows more, and `--json` prints JSON. The log is kept in `~/.woolly/activity.log` and never leaves your computer.
+
+Every memory also records the app that saved it. `woolly show <id>` and the review page show it as "via Cursor".
+
+## context
+
+```sh
+woolly context
+```
+
+Prints your profile and the memories that mention the current project, framed as notes for an AI. `woolly connect` sets Claude Code to run it when a session starts. See [Memory that loads by itself](/docs/connect#memory-that-loads-by-itself).
 
 ## service
 

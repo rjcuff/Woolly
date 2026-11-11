@@ -203,6 +203,18 @@ button.link:hover { color: var(--fg); }
   overflow-wrap: anywhere;
 }
 
+.activity-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.activity-bar select {
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--fg);
+}
+.row.log .content { font-size: 15px; }
+
 @media (max-width: 560px) {
   .add-row { flex-direction: column; }
 }

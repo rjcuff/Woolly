@@ -14,6 +14,17 @@ Woolly needs no configuration. These settings are there if you want them.
 | `WOOLLY_EMBED_MODEL` | `nomic-embed-text` | Ollama model used for search by meaning |
 | `WOOLLY_NO_EMBED` | not set | Set to any value to turn Ollama off |
 
+## What's in ~/.woolly
+
+| Path | What it is |
+| --- | --- |
+| `memories/` | Your memories, one Markdown file each |
+| `trash/` | Forgotten memories, until you empty the trash |
+| `activity.log` | What each app saved, read and deleted. See `woolly log` |
+| `token` | The secret the local API asks for |
+| `index/` | Search data built from your memories. Safe to delete |
+| `logs/` | Output from the background service |
+
 ## Syncing between computers
 
 Because memories are plain files, you can sync them with any tool you already use. Point `WOOLLY_HOME` at a synced folder, or keep `~/.woolly/memories` in a private git repo.

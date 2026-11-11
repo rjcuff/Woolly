@@ -11,7 +11,7 @@ MCP, the Model Context Protocol, is a standard way for AI apps to use outside to
 When you open Claude Code, Claude Desktop or Cursor, the app runs `woolly mcp` in the background. You don't start anything yourself, and `woolly serve` doesn't need to be running.
 ### They introduce themselves
 
-The app asks Woolly what it can do. Woolly answers with its list of tools and a short note telling the AI how to use them, like "recall context at the start of a task" and "never save secrets".
+The app tells Woolly its name, and asks what it can do. Woolly answers with its list of tools and a short note telling the AI how to use them, like "recall context at the start of a task" and "never save secrets".
 ### The AI decides when to use a tool
 
 While you chat, the AI reads the tool descriptions and calls one when it helps. Many apps ask your permission the first time a tool is used.
@@ -56,6 +56,10 @@ Every memory records where it came from. Woolly also refuses text from an AI tha
 
  The AI marks a fact as `user` only when you said it directly, and as `agent` when it inferred it. If an AI's guess disagrees with something you said, your version stays current and the guess is saved as a conflict. Review those with `woolly conflicts` or on the [review page](/docs/review).
 
+## Which app did what
+
+Woolly records the name each app gives when it starts, like Claude Code or Cursor. Every memory notes the app that saved it, and `woolly log` lists what each app saved, read and deleted. The log stays on your computer.
+
 ## Sharing between apps
 
 Each connected app runs its own copy of `woolly mcp`, but they all read and write the same files. Woolly notices changes right away, so a memory saved in Claude is there for Cursor a second later.
@@ -76,7 +80,7 @@ Apps don't always see the same `PATH` as your terminal. Use the full path in the
 
 ### I want to see what the AI saved
 
-Run `woolly list`, or open the [review page](/docs/review) with `woolly ui`.
+Run `woolly log` to see what each app saved, read and deleted. Or open the [review page](/docs/review) with `woolly ui` and pick **Activity**.
 
 ### The AI saved something wrong
 

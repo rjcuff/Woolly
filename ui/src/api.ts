@@ -12,7 +12,17 @@ export type Memory = {
   updated_at: string;
   superseded_by?: string;
   conflicts_with?: string;
+  via?: string; // the app that saved it
   inTrash?: boolean; // set by the page for memories shown in the trash
+};
+
+export type Activity = {
+  time: string;
+  app: string;
+  action: string;
+  ids?: string[];
+  query?: string;
+  count?: number;
 };
 
 export type RecallResult = { memory: Memory; score: number };
@@ -20,7 +30,8 @@ export type RecallResult = { memory: Memory; score: number };
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...init,
-    headers: init?.body ? { 'Content-Type': 'application/json' } : undefined,
+    // Names this page in the activity log, so its own reads aren't logged.
+    headers: { ...(init?.body ? { 'Content-Type': 'application/json' } : {}), 'X-Woolly-Client': 'review page' },
   });
   const text = await res.text();
   const data = text ? JSON.parse(text) : {};
@@ -50,8 +61,9 @@ export const api = {
   emptyTrash: () => call<{ deleted: number }>('/api/trash', { method: 'DELETE' }),
   resolve: (keepId: string) =>
     call<unknown>('/api/resolve', { method: 'POST', body: JSON.stringify({ keep_id: keepId }) }),
+  activity: () => call<{ activity: Activity[] }>('/api/activity?limit=300').then((r) => r.activity),
   profile: async () => {
-    const res = await fetch('/api/profile?format=markdown');
+    const res = await fetch('/api/profile?format=markdown', { headers: { 'X-Woolly-Client': 'review page' } });
     if (res.status === 401) throw new Error('This page needs to be opened with `woolly ui`. Run it in your terminal.');
     return res.text();
   },

@@ -125,6 +125,29 @@ test('shows and copies the profile', async ({ page, context, browserName }) => {
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('# About me');
 });
 
+test('shows which app saved a memory and what each app did', async ({ page }) => {
+  const text = `Uses tabs for indentation ${unique()}`;
+  const res = await page.request.post('/api/remember', {
+    data: { content: text, source: 'agent' },
+    headers: { 'X-Woolly-Client': 'cursor' },
+  });
+  expect(res.ok()).toBe(true);
+  await page.reload();
+  await expect(page.getByRole('listitem').filter({ hasText: text })).toContainText('via Cursor');
+
+  const mine = `Saved from the page ${unique()}`;
+  await add(page, mine);
+  await expect(page.getByRole('listitem').filter({ hasText: mine })).toContainText('via review page');
+
+  await page.getByRole('button', { name: 'Activity' }).click();
+  const row = page.getByRole('listitem').filter({ hasText: text });
+  await expect(row).toContainText('Saved');
+  await expect(row).toContainText('Cursor');
+  await page.getByLabel('App').selectOption('Cursor');
+  await expect(page.getByRole('listitem').filter({ hasText: mine })).toHaveCount(0);
+  await expect(row).toBeVisible();
+});
+
 test('no horizontal scrolling', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });

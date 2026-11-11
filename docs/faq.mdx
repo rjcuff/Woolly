@@ -77,11 +77,13 @@ woolly remember "Test card 4242 4242 4242 4242" --allow-secret
 
 ## How do I see what my AI saved?
 
-Run `woolly list`, or open the review page:
+Run `woolly log` to see what each app saved, read and deleted:
 
 ```sh
-woolly ui
+woolly log --app cursor
 ```
+
+Or open the review page with `woolly ui` and pick **Activity**.
 
 ## How do I back up or sync my memories?
 

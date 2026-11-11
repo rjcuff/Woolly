@@ -38,6 +38,7 @@ func encode(m *Memory) []byte {
 	w("updated_at", m.UpdatedAt.UTC().Format(time.RFC3339Nano))
 	w("superseded_by", m.SupersededBy)
 	w("conflicts_with", m.ConflictsWith)
+	w("via", m.Via)
 	b.WriteString("---\n\n")
 	b.WriteString(strings.TrimSpace(m.Content))
 	b.WriteString("\n")
@@ -84,6 +85,8 @@ func decode(data []byte) (*Memory, error) {
 			m.SupersededBy = v
 		case "conflicts_with":
 			m.ConflictsWith = v
+		case "via":
+			m.Via = v
 		}
 	}
 	if m.ID == "" {

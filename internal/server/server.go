@@ -8,9 +8,11 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/rjcuff/woolly/internal/activity"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/profile"
 	"github.com/rjcuff/woolly/internal/recall"
@@ -19,9 +21,39 @@ import (
 // DefaultAddr sits next to Ollama's 11434.
 const DefaultAddr = "127.0.0.1:11435"
 
-// Handler returns the HTTP handler for the Woolly API.
-func Handler(store *memory.Store, engine *recall.Engine, version, token string) http.Handler {
+// ReviewPage is the app name for changes made in the review page.
+const ReviewPage = "review page"
+
+// appOf names the app behind a request. Apps can name themselves with the
+// X-Woolly-Client header. The review page signs in with a cookie, and
+// anything else is "API".
+func appOf(r *http.Request) string {
+	if h := activity.AppName(r.Header.Get("X-Woolly-Client"), ""); h != "" {
+		return h
+	}
+	if r.Header.Get("Authorization") == "" {
+		if _, err := r.Cookie(tokenCookie); err == nil {
+			return ReviewPage
+		}
+	}
+	return "API"
+}
+
+// Handler returns the HTTP handler for the Woolly API. If log is set, saves,
+// reads and deletes are recorded in it. Reads by the review page are not,
+// since it reads everything each time it opens.
+func Handler(store *memory.Store, engine *recall.Engine, version, token string, log *activity.Log) http.Handler {
 	mux := http.NewServeMux()
+	record := func(r *http.Request, action string, ids []string, query string, count int) {
+		app := appOf(r)
+		switch action {
+		case "recall", "profile", "list":
+			if app == ReviewPage {
+				return
+			}
+		}
+		log.Add(activity.Entry{App: app, Action: action, IDs: ids, Query: query, Count: count})
+	}
 	mux.HandleFunc("GET /auth", authHandler(token))
 
 	mux.Handle("GET /", uiHandler())
@@ -39,7 +71,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 		if !readJSON(w, r, &req) {
 			return
 		}
-		in := memory.RememberInput{Content: req.Content, Key: req.Key, Tags: req.Tags}
+		in := memory.RememberInput{Content: req.Content, Key: req.Key, Tags: req.Tags, Via: appOf(r)}
 		if req.Source != "" {
 			src, ok := memory.ParseSource(req.Source)
 			if !ok {
@@ -53,6 +85,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		record(r, "remember", []string{res.Memory.ID}, "", 0)
 		writeJSON(w, http.StatusOK, res)
 	})
 
@@ -73,6 +106,11 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 		if results == nil {
 			results = []recall.Result{}
 		}
+		ids := make([]string, len(results))
+		for i, res := range results {
+			ids[i] = res.Memory.ID
+		}
+		record(r, "recall", ids, req.Query, len(results))
 		writeJSON(w, http.StatusOK, map[string]any{"mode": mode, "results": results})
 	})
 
@@ -83,6 +121,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		record(r, "list", nil, "", len(mems))
 		writeJSON(w, http.StatusOK, map[string]any{"memories": orEmpty(mems)})
 	})
 
@@ -109,6 +148,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 			writeStoreError(w, err)
 			return
 		}
+		record(r, "update", []string{m.ID}, "", 0)
 		writeJSON(w, http.StatusOK, m)
 	})
 
@@ -119,6 +159,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 			return
 		}
 		p := profile.Build(mems)
+		record(r, "profile", nil, "", len(mems))
 		if r.URL.Query().Get("format") == "markdown" {
 			w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 			_, _ = w.Write([]byte(p.Markdown()))
@@ -133,6 +174,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 			writeStoreError(w, err)
 			return
 		}
+		record(r, "forget", []string{m.ID}, "", 0)
 		writeJSON(w, http.StatusOK, map[string]any{"forgotten": m})
 	})
 
@@ -157,6 +199,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 			writeStoreError(w, err)
 			return
 		}
+		record(r, "restore", []string{m.ID}, "", 0)
 		writeJSON(w, http.StatusOK, m)
 	})
 
@@ -166,6 +209,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		record(r, "empty_trash", nil, "", n)
 		writeJSON(w, http.StatusOK, map[string]int{"deleted": n})
 	})
 
@@ -190,7 +234,26 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string) 
 			writeStoreError(w, err)
 			return
 		}
+		record(r, "resolve", []string{kept.ID}, "", len(replaced))
 		writeJSON(w, http.StatusOK, map[string]any{"kept": kept, "superseded": orEmpty(replaced)})
+	})
+
+	mux.HandleFunc("GET /api/activity", func(w http.ResponseWriter, r *http.Request) {
+		n := 200
+		if v := r.URL.Query().Get("limit"); v != "" {
+			if k, err := strconv.Atoi(v); err == nil && k > 0 && k <= 5000 {
+				n = k
+			}
+		}
+		entries, err := log.Recent(n, r.URL.Query().Get("app"))
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if entries == nil {
+			entries = []activity.Entry{}
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"activity": entries})
 	})
 
 	return LocalOnly(requireToken(token, mux))

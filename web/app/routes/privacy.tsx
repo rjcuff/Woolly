@@ -25,6 +25,10 @@ export default function Privacy() {
         <li>Your memories are stored as files on your computer, in <code>~/.woolly</code> unless you choose another folder.</li>
         <li>Woolly has no accounts, no analytics and no tracking. It never sends your memories to us or anyone else.</li>
         <li>
+          Woolly keeps a log on your computer of what each connected app saved, read and deleted, so you
+          can check on them. It's stored in <code>~/.woolly/activity.log</code> and is never sent anywhere.
+        </li>
+        <li>
           If you turn on search by meaning, Woolly sends text to Ollama at the address you set. By
           default that is Ollama running on your own computer.
         </li>

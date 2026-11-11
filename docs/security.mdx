@@ -47,6 +47,10 @@ AI apps connected through MCP don't use the API. They talk to their own copy of 
 
 The `~/.woolly` folder can only be opened by your user account, and each memory file can only be read by you.
 
+## You can see what each app did
+
+Every memory records the app that saved it, and `woolly log` lists what each app saved, read and deleted. If an app saves something odd or reads more than it should, you'll see it there and on the **Activity** tab of the [review page](/docs/review). The log stays on your computer, readable only by you.
+
 ## Downloads are verified
 
 The install script checks every download against the checksum published with the release. If they don't match, nothing is installed.

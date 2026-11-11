@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/rjcuff/woolly/internal/activity"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/recall"
 )
@@ -27,7 +28,7 @@ func setup(t *testing.T) (http.Handler, string) {
 	if info.Mode().Perm() != 0o600 {
 		t.Fatalf("token file mode %v, want 0600", info.Mode().Perm())
 	}
-	return Handler(store, recall.New(store, nil, ""), "test", token), token
+	return Handler(store, recall.New(store, nil, ""), "test", token, activity.Open(home)), token
 }
 
 func do(h http.Handler, method, path, body string, headers map[string]string) *httptest.ResponseRecorder {
@@ -98,5 +99,28 @@ func TestBlocksOtherSites(t *testing.T) {
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("non-local host: %d", rec.Code)
+	}
+}
+
+func TestActivityRecordsApps(t *testing.T) {
+	h, token := setup(t)
+	bearer := map[string]string{"Authorization": "Bearer " + token, "X-Woolly-Client": "my-script"}
+	if rec := do(h, "POST", "/api/remember", `{"content":"Likes tea"}`, bearer); rec.Code != 200 || !strings.Contains(rec.Body.String(), `"via":"my-script"`) {
+		t.Fatalf("remember: %d %s", rec.Code, rec.Body)
+	}
+	do(h, "POST", "/api/recall", `{"query":"tea"}`, map[string]string{"Authorization": "Bearer " + token})
+	// The review page reads everything when it opens; that isn't logged.
+	do(h, "GET", "/api/memories", "", map[string]string{"Cookie": "woolly_token=" + token})
+
+	rec := do(h, "GET", "/api/activity", "", map[string]string{"Authorization": "Bearer " + token})
+	body := rec.Body.String()
+	if rec.Code != 200 || !strings.Contains(body, `"app":"my-script","action":"remember"`) || !strings.Contains(body, `"app":"API","action":"recall"`) {
+		t.Fatalf("activity: %d %s", rec.Code, body)
+	}
+	if strings.Contains(body, "review page") {
+		t.Fatalf("review page reads should not be logged: %s", body)
+	}
+	if code := do(h, "GET", "/api/activity", "", nil).Code; code != http.StatusUnauthorized {
+		t.Fatalf("activity needs the token: %d", code)
 	}
 }

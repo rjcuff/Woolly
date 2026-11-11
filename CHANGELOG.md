@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Memory that loads by itself. `woolly connect` adds a startup hook to Claude Code, so each session starts with your profile and the notes about the project you're in. `woolly context` prints what it loads. `woolly disconnect` removes the hook.
+- Every memory records the app that saved it, like Claude Code, Cursor, the proxy or the command line. The review page shows it as "via Cursor".
+- `woolly log` shows what each app saved, read and deleted. It's also on the new **Activity** tab of the review page and at `GET /api/activity`. The log stays in `~/.woolly/activity.log`.
+- Apps using the local API can name themselves with the `X-Woolly-Client` header. The Python package sends "Python app" by default, or the `app` you pass to `Woolly()`.
+- `woolly doctor` says whether Claude Code loads your profile at startup.
+
 ## 0.6.0
 
 - `woolly connect` adds Woolly to Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Codex, Gemini CLI, LM Studio and opencode in one step. It keeps the rest of each config and saves a backup first. `woolly disconnect` undoes it.

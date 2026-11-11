@@ -93,5 +93,7 @@ w.profile().markdown           # a summary of everything known
 `Woolly()` uses `WOOLLY_HOST` and `WOOLLY_HOME` like the rest of Woolly. You can also pass them in:
 
 ```python
-w = Woolly(address="127.0.0.1:11435", home="~/.woolly")
+w = Woolly(address="127.0.0.1:11435", home="~/.woolly", app="My notes app")
 ```
+
+`app` is the name your memories are saved under and the name your app shows up as in `woolly log`. It defaults to "Python app".
