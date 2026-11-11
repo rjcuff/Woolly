@@ -25,10 +25,10 @@ Woolly runs on your computer and gives all of them one shared memory. It's store
 ```sh
 curl -fsSL https://usewoolly.com/install.sh | sh
 woolly remember "I prefer short answers"
-claude mcp add woolly -- woolly mcp
+woolly connect
 ```
 
-Now Claude Code remembers. So does every other app you connect.
+`woolly connect` adds Woolly to Claude Code, Claude Desktop, Cursor, VS Code and Windsurf. Now they all remember.
 
 Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm https://usewoolly.com/install.ps1 | iex`, or `go install github.com/rjcuff/woolly/cmd/woolly@latest`.
 
@@ -53,7 +53,7 @@ Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm http
 ## Give Ollama a memory
 
 ```sh
-woolly proxy
+woolly service install   # or run `woolly proxy` in a terminal
 OLLAMA_HOST=127.0.0.1:11436 ollama run llama3.2
 ```
 
@@ -84,13 +84,19 @@ woolly ui               # review and edit memories in your browser
 woolly import chatgpt ~/Downloads/export.zip --dry-run
 woolly forget <id>      # moves it to the trash; undo with woolly restore <id>
 woolly proxy            # memory for Ollama, OpenAI and Anthropic apps
+woolly connect          # add Woolly to every AI app on this computer
+woolly service install  # run in the background and start at login, like Ollama
 ```
 
 Full list: [Commands](https://usewoolly.com/docs/cli).
 
-## Connect Claude Desktop and Cursor
+## Connect your apps
 
-Add this to the app's MCP config:
+```sh
+woolly connect
+```
+
+Or add this to any MCP app's config yourself:
 
 ```json
 { "mcpServers": { "woolly": { "command": "woolly", "args": ["mcp"] } } }

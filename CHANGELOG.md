@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- `woolly connect` adds Woolly to Claude Code, Claude Desktop, Cursor, VS Code and Windsurf in one step. It keeps the rest of each config and saves a backup first. `woolly disconnect` undoes it.
+- `woolly service install` runs Woolly in the background and starts it at login, like Ollama. It uses a LaunchAgent on macOS, a systemd user service on Linux and a startup entry on Windows, none of which need admin rights.
+- `woolly serve --proxy` runs the API, review page and proxy in one process. `--log` writes output to a file.
+- `woolly doctor` shows the background service and which apps are connected.
+
 ## 0.5.0
 
 - New Python package: `pip install woolly-ai`. Save, recall and add memories to prompts from your own apps. See [Python](https://usewoolly.com/docs/python).

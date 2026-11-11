@@ -5,13 +5,50 @@ description: Use Woolly from Claude Code, Claude Desktop, Cursor and any other M
 
 Woolly speaks MCP, the Model Context Protocol. Any app that supports MCP can use it as its memory. For Ollama and apps that don't support MCP, use the [proxy](/docs/proxy). To learn what happens behind the scenes, see [How MCP works](/docs/mcp).
 
-## Claude Code
+## One command
+
+```sh
+woolly connect
+```
+
+Woolly finds the AI apps on your computer and adds itself to each one:
+
+```txt
+Connecting Woolly (/opt/homebrew/bin/woolly)
+
+  ✓ Claude Code     connected
+  ✓ Claude Desktop  connected
+  ✓ Cursor          connected
+  - Windsurf        not found
+  ✓ VS Code         connected
+
+Restart Claude Desktop to load the change.
+```
+
+It works with Claude Code, Claude Desktop, Cursor, VS Code and Windsurf. It only adds a `woolly` entry and keeps the rest of each config as it was. Before it changes a file, it saves a copy next to it ending in `.woolly-backup`.
+
+| Command | What it does |
+| --- | --- |
+| `woolly connect` | Connect every app it finds |
+| `woolly connect cursor vscode` | Connect only these apps |
+| `woolly connect --dry-run` | Show what would change without changing anything |
+| `woolly disconnect` | Remove Woolly from the apps again |
+
+App names: `claude-code`, `claude-desktop`, `cursor`, `vscode`, `windsurf`.
+
+If a config file has comments, Woolly won't rewrite it. It prints the lines to paste in yourself instead.
+
+## Set it up by hand
+
+Prefer to edit the configs yourself, or using another MCP app? Here's what `woolly connect` adds.
+
+### Claude Code
 
 ```sh
 claude mcp add woolly -- woolly mcp
 ```
 
-## Claude Desktop
+### Claude Desktop
 
 Open **Settings → Developer → Edit Config** and add Woolly:
 
@@ -25,7 +62,7 @@ Open **Settings → Developer → Edit Config** and add Woolly:
 
 Restart Claude Desktop.
 
-## Cursor
+### Cursor
 
 Add the same block to `~/.cursor/mcp.json`:
 
@@ -33,6 +70,18 @@ Add the same block to `~/.cursor/mcp.json`:
 {
   "mcpServers": {
     "woolly": { "command": "woolly", "args": ["mcp"] }
+  }
+}
+```
+
+### VS Code
+
+VS Code uses `servers` instead of `mcpServers`. Run **MCP: Open User Configuration** and add:
+
+```json title="mcp.json"
+{
+  "servers": {
+    "woolly": { "type": "stdio", "command": "woolly", "args": ["mcp"] }
   }
 }
 ```

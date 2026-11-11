@@ -17,7 +17,12 @@ description: Everything the woolly command can do.
 | `woolly ui` | Open the review page in your browser |
 | `woolly conflicts` | Review facts that disagree |
 | `woolly resolve <id>` | Keep this version as the current fact |
-| `woolly serve` | Run the local HTTP API and review page |
+| `woolly connect [app...]` | Add Woolly to your AI apps. See [Connect your apps](/docs/connect) |
+| `woolly disconnect [app...]` | Remove Woolly from your AI apps |
+| `woolly service install` | Run Woolly in the background and start it at login |
+| `woolly service status` | Show whether the background service is running |
+| `woolly service uninstall` | Stop it and remove it from login |
+| `woolly serve` | Run the local HTTP API and review page. Add `--proxy` to run the proxy too |
 | `woolly mcp` | Run as an MCP server for AI apps |
 | `woolly proxy` | Give memory to Ollama and OpenAI or Anthropic apps. See [Proxy](/docs/proxy) |
 | `woolly doctor` | Check your setup |
@@ -99,3 +104,19 @@ Forgetting moves a memory to the trash. It's only gone for good after `woolly tr
 ```sh
 woolly list --all
 ```
+
+## service
+
+```sh
+woolly service install
+```
+
+Runs `woolly serve --proxy` in the background and starts it when you log in. It needs no admin rights.
+
+| System | How |
+| --- | --- |
+| macOS | A LaunchAgent at `~/Library/LaunchAgents/com.usewoolly.woolly.plist` |
+| Linux | A systemd user service at `~/.config/systemd/user/woolly.service` |
+| Windows | A startup entry for your account, with no console window |
+
+Output goes to `~/.woolly/logs/woolly.log`. `woolly service status` shows whether the API and proxy are up, and `woolly doctor` includes it too.

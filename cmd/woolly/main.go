@@ -60,7 +60,11 @@ Usage:
   woolly conflicts
   woolly resolve <id>          keep this memory as the current fact for its key
   woolly ui                    open the review page in your browser
-  woolly serve                 run the local HTTP API and review page (default 127.0.0.1:11435)
+  woolly connect [app...]      add Woolly to Claude Code, Claude Desktop, Cursor, VS Code, Windsurf
+  woolly disconnect [app...]   remove it again
+  woolly service install       run Woolly in the background, starting at login
+  woolly service status|uninstall
+  woolly serve [--proxy]       run the local HTTP API and review page (default 127.0.0.1:11435)
   woolly mcp                   run as an MCP server on stdio (for Claude, Cursor, ...)
   woolly proxy                 give memory to Ollama and OpenAI or Anthropic apps (127.0.0.1:11436)
   woolly doctor                check your setup
@@ -69,7 +73,7 @@ Usage:
 Memories are plain Markdown files in ~/.woolly/memories (set WOOLLY_HOME to move them).
 If Ollama is running, Woolly uses it for semantic search; otherwise keyword search.
 
-Connect Claude Code:   claude mcp add woolly -- woolly mcp
+Connect your AI apps:  woolly connect
 `
 
 func main() {
@@ -124,6 +128,12 @@ func run(args []string) error {
 		return cmdProxy(rest)
 	case "doctor":
 		return cmdDoctor(rest)
+	case "connect":
+		return cmdConnect(rest)
+	case "disconnect":
+		return cmdConnect(append([]string{"--remove"}, rest...))
+	case "service":
+		return cmdService(rest)
 	}
 	return fmt.Errorf("unknown command %q (run 'woolly help')", cmd)
 }
@@ -520,8 +530,23 @@ func cmdResolve(args []string) error {
 func cmdServe(args []string) error {
 	fs := newFlags("serve")
 	addr := fs.String("addr", envOr("WOOLLY_HOST", server.DefaultAddr), "listen address")
+	withProxy := fs.Bool("proxy", false, "also run the proxy (see woolly proxy)")
+	logPath := fs.String("log", "", "write output to this file instead of the terminal")
+	var envs envFlags
+	fs.Var(&envs, "env", "set a Woolly setting, e.g. --env WOOLLY_HOME=/path (used by the background service)")
 	if _, err := parse(fs, args); err != nil {
 		return err
+	}
+	if err := envs.apply(); err != nil {
+		return err
+	}
+	if !flagSet(fs, "addr") {
+		*addr = envOr("WOOLLY_HOST", server.DefaultAddr)
+	}
+	if *logPath != "" {
+		if err := redirectOutput(*logPath); err != nil {
+			return err
+		}
 	}
 	a, err := open()
 	if err != nil {
@@ -531,9 +556,30 @@ func cmdServe(args []string) error {
 	if err != nil {
 		return err
 	}
+
+	ln, err := net.Listen("tcp", *addr)
+	if err != nil {
+		return fmt.Errorf("can't start Woolly on %s (is it already running? try `woolly service status`): %w", *addr, err)
+	}
+	// Only the process that owns the port records its PID, so a second
+	// `woolly serve` can't overwrite or delete the running server's file.
+	if err := writePID(a.home); err != nil {
+		return err
+	}
+	defer removePID(a.home)
 	fmt.Fprintf(os.Stderr, "Woolly %s listening on http://%s (memories: %s)\n", version, *addr, a.store.Dir())
 	fmt.Fprintf(os.Stderr, "Open the review page with `woolly ui`. API token: %s\n", filepath.Join(a.home, "token"))
-	return server.Serve(*addr, server.Handler(a.store, a.engine, version, token))
+
+	errc := make(chan error, 2)
+	go func() { errc <- server.ServeListener(ln, server.Handler(a.store, a.engine, version, token)) }()
+	if *withProxy {
+		srv, pln, err := startProxy(a, defaultProxyOptions())
+		if err != nil {
+			return err
+		}
+		go func() { errc <- srv.Serve(pln) }()
+	}
+	return <-errc
 }
 
 // cmdUI opens the review page, starting the server first if it isn't running.
@@ -581,21 +627,48 @@ func openBrowser(url string) error {
 	return cmd.Start()
 }
 
+// proxyOptions configures the proxy. Empty addresses fall back to defaults.
+type proxyOptions struct {
+	addr, ollama, openai, anthropic string
+	limit                           int
+	save                            bool
+}
+
+func defaultProxyOptions() proxyOptions {
+	return proxyOptions{
+		addr:      envOr("WOOLLY_PROXY_HOST", proxy.DefaultAddr),
+		anthropic: "https://api.anthropic.com",
+		limit:     6,
+		save:      true,
+	}
+}
+
 func cmdProxy(args []string) error {
+	o := defaultProxyOptions()
 	fs := newFlags("proxy")
-	addr := fs.String("addr", envOr("WOOLLY_PROXY_HOST", proxy.DefaultAddr), "listen address")
-	ollamaURL := fs.String("ollama", "", "Ollama address (default: OLLAMA_HOST or 127.0.0.1:11434)")
-	openaiURL := fs.String("openai", "", "OpenAI-compatible API for /v1 requests (default: Ollama)")
-	anthropicURL := fs.String("anthropic", "https://api.anthropic.com", "Anthropic API address")
-	limit := fs.Int("n", 6, "memories to add per request")
+	fs.StringVar(&o.addr, "addr", o.addr, "listen address")
+	fs.StringVar(&o.ollama, "ollama", "", "Ollama address (default: OLLAMA_HOST or 127.0.0.1:11434)")
+	fs.StringVar(&o.openai, "openai", "", "OpenAI-compatible API for /v1 requests (default: Ollama)")
+	fs.StringVar(&o.anthropic, "anthropic", o.anthropic, "Anthropic API address")
+	fs.IntVar(&o.limit, "n", o.limit, "memories to add per request")
 	noSave := fs.Bool("no-save", false, "don't save facts you state in chats")
 	if _, err := parse(fs, args); err != nil {
 		return err
 	}
+	o.save = !*noSave
 	a, err := open()
 	if err != nil {
 		return err
 	}
+	srv, ln, err := startProxy(a, o)
+	if err != nil {
+		return err
+	}
+	return srv.Serve(ln)
+}
+
+// startProxy builds the proxy and opens its listener, printing how to use it.
+func startProxy(a *app, o proxyOptions) (*http.Server, net.Listener, error) {
 	parseURL := func(name, raw string) (*url.URL, error) {
 		if !strings.Contains(raw, "://") {
 			raw = "http://" + raw
@@ -606,33 +679,33 @@ func cmdProxy(args []string) error {
 		}
 		return u, nil
 	}
-	ol := *ollamaURL
+	ol := o.ollama
 	if ol == "" {
 		ol = a.ollama.Host
 	}
-	oa := *openaiURL
+	oa := o.openai
 	if oa == "" {
 		oa = ol
 	}
 	targets := map[string]*url.URL{}
-	for name, raw := range map[string]string{"ollama": ol, "openai": oa, "anthropic": *anthropicURL} {
+	for name, raw := range map[string]string{"ollama": ol, "openai": oa, "anthropic": o.anthropic} {
 		u, err := parseURL(name, raw)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		targets[name] = u
 	}
 	p := &proxy.Proxy{
 		Store: a.store, Engine: a.engine,
 		Ollama: targets["ollama"], OpenAI: targets["openai"], Anthropic: targets["anthropic"],
-		Limit: *limit, Save: !*noSave,
+		Limit: o.limit, Save: o.save,
 		Log: log.New(os.Stderr, "woolly proxy: ", 0),
 	}
-	ln, err := net.Listen("tcp", *addr)
+	ln, err := net.Listen("tcp", o.addr)
 	if err != nil {
-		return fmt.Errorf("can't start the proxy on %s: %w", *addr, err)
+		return nil, nil, fmt.Errorf("can't start the proxy on %s: %w", o.addr, err)
 	}
-	host := strings.TrimPrefix(*addr, "http://")
+	host := strings.TrimPrefix(o.addr, "http://")
 	fmt.Fprintf(os.Stderr, `Woolly proxy on http://%s
 
   Ollama:     OLLAMA_HOST=%s ollama run llama3.2
@@ -643,7 +716,7 @@ Memories are added to each chat. Facts you state are saved%s.
 `, host, host, host, targets["openai"], host, targets["anthropic"], map[bool]string{true: "", false: " (off: --no-save)"}[p.Save])
 	// No write timeout: model replies can stream for a long time.
 	srv := &http.Server{Handler: server.LocalOnly(p.Handler()), ReadHeaderTimeout: 10 * time.Second}
-	return srv.Serve(ln)
+	return srv, ln, nil
 }
 
 func cmdMCP(args []string) error {
@@ -700,6 +773,24 @@ func cmdDoctor(args []string) error {
 	}
 	if conflicts > 0 {
 		fmt.Println("  run 'woolly conflicts' to review disagreeing memories")
+	}
+
+	fmt.Println("\nBackground service")
+	if spec, _, err := serviceSpec(); err == nil {
+		fmt.Println(serviceSummary(spec))
+	}
+
+	fmt.Println("\nApps")
+	connected, missing := connectedApps()
+	if len(connected) > 0 {
+		fmt.Println("  connected:", strings.Join(connected, ", "))
+	}
+	if len(missing) > 0 {
+		fmt.Println("  not connected:", strings.Join(missing, ", "))
+		fmt.Println("  tip: woolly connect")
+	}
+	if len(connected)+len(missing) == 0 {
+		fmt.Println("  no MCP apps found (Claude Code is checked by `woolly connect`)")
 	}
 	return nil
 }

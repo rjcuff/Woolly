@@ -60,7 +60,15 @@ woolly recall "tabs or spaces"
 ## Connect your AI
 
 ```sh
-claude mcp add woolly -- woolly mcp
+woolly connect
 ```
 
-Now Claude can remember and recall on its own. See [Connect your apps](/docs/connect) for Claude Desktop and Cursor.
+This adds Woolly to Claude Code, Claude Desktop, Cursor, VS Code and Windsurf, whichever you have. Now they can remember and recall on their own. See [Connect your apps](/docs/connect).
+
+## Keep it running
+
+```sh
+woolly service install
+```
+
+Woolly now runs in the background and starts when you log in, like Ollama. The review page, the API and the [proxy](/docs/proxy) are always ready. Stop it with `woolly service uninstall`.
