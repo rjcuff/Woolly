@@ -1,8 +1,4 @@
-// Package memory defines Woolly's memory model and its on-disk store.
-//
-// Every memory is a plain Markdown file with a small front-matter header, so
-// users can read, edit, grep, sync and version-control their memories with
-// ordinary tools. The files are the source of truth; any index is derived.
+// Package memory stores memories as plain Markdown files with a small header.
 package memory
 
 import (

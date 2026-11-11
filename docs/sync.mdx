@@ -1,0 +1,64 @@
+---
+title: Sync your devices
+description: Keep your memories in step between your laptop, desktop and a Raspberry Pi. No cloud, no account.
+---
+
+Woolly can keep your memories the same on all your devices. They talk directly over your own network, and everything they send is encrypted.
+
+## Link two devices
+
+On the first device:
+
+```sh
+woolly sync init
+```
+
+```txt
+Sync is set up on this device.
+
+On your other device, run:
+
+  woolly sync join 192.168.1.20 Xb3k...
+```
+
+Run that command on the other device. It links the two and syncs right away. To add a third device, run the same join command there.
+
+The first device needs to be running Woolly for the others to reach it. Run `woolly service install` so it always is.
+
+## Keeping in step
+
+`woolly serve` and the background service sync with your other devices every 5 minutes. To sync right now:
+
+```sh
+woolly sync
+```
+
+| Command | What it does |
+| --- | --- |
+| `woolly sync init` | Set up sync and print the join command |
+| `woolly sync join <address> <code>` | Link this device to another |
+| `woolly sync` | Sync now |
+| `woolly sync status` | List linked devices and when they last synced |
+| `woolly sync leave` | Stop syncing on this device. Your memories stay |
+
+## How it works
+
+- Each device lists its memories with the time each one last changed, and the newer copy wins.
+- Forgetting a memory moves it to the trash on every device. Emptying the trash deletes it everywhere for good.
+- Devices listen on port `11437`. Your computer may ask once whether to allow it.
+
+## Is it safe?
+
+The join code is a secret key that only your devices have. It's never sent over the network. Every message between devices is encrypted and signed with it, so another computer on your network can't read your memories or send fake ones. Old messages are refused, so a recorded one can't be replayed.
+
+Keep the code private. Anyone with it, on your network, can read and change your memories. If it leaks, run `woolly sync leave` on every device and set sync up again.
+
+## Raspberry Pi and other small devices
+
+Woolly is one small program, so it runs on a Raspberry Pi. The install script picks the right build for 64-bit and 32-bit Raspberry Pi OS:
+
+```sh
+curl -fsSL https://usewoolly.com/install.sh | sh
+```
+
+A Pi that's always on makes a good home for Woolly. Link your other devices to it so they stay in step even when your laptop is closed.

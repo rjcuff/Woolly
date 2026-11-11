@@ -28,6 +28,7 @@ import (
 	"github.com/rjcuff/woolly/internal/mcp"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/ollama"
+	"github.com/rjcuff/woolly/internal/peer"
 	"github.com/rjcuff/woolly/internal/profile"
 	"github.com/rjcuff/woolly/internal/proxy"
 	"github.com/rjcuff/woolly/internal/recall"
@@ -51,6 +52,7 @@ const usage = `Woolly: local memory for your AI tools.
 
 Usage:
   woolly remember <text> [--key k] [--tags a,b] [--project p] [--source user|agent|import] [--allow-secret]
+  woolly learn [text]          pick out facts from text or a conversation with a local model
   woolly recall <query> [-n 5] [--project p] [--all] [--json]
   woolly list [--project p] [--all] [--json]
   woolly show <id>
@@ -66,6 +68,7 @@ Usage:
   woolly ui                    open the review page in your browser
   woolly connect [app...]      add Woolly to Claude, Cursor, VS Code, Codex, Gemini and more
   woolly disconnect [app...]   remove it again
+  woolly sync [init|join|status]  keep memories in step between your devices
   woolly service install       run Woolly in the background, starting at login
   woolly service status|uninstall
   woolly serve [--proxy]       run the local HTTP API and review page (default 127.0.0.1:11435)
@@ -121,6 +124,10 @@ func run(args []string) error {
 		return cmdTrash(rest)
 	case "conflicts":
 		return cmdConflicts(rest)
+	case "learn":
+		return cmdLearn(rest)
+	case "sync":
+		return cmdSync(rest)
 	case "log", "activity":
 		return cmdLog(rest)
 	case "context":
@@ -611,7 +618,12 @@ func cmdServe(args []string) error {
 	fmt.Fprintf(os.Stderr, "Open the review page with `woolly ui`. API token: %s\n", filepath.Join(a.home, "token"))
 
 	errc := make(chan error, 2)
-	go func() { errc <- server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.log)) }()
+	go func() {
+		errc <- server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.log, a.learner()))
+	}()
+	if _, err := startSync(a, true); err != nil {
+		fmt.Fprintln(os.Stderr, "woolly: sync is off:", err)
+	}
 	if *withProxy {
 		srv, pln, err := startProxy(a, defaultProxyOptions())
 		if err != nil {
@@ -651,7 +663,7 @@ func cmdUI(args []string) error {
 	}
 	fmt.Printf("Woolly review page: %s\nPress Ctrl+C to stop.\n", url)
 	_ = openBrowser(link)
-	return server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.log))
+	return server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.log, a.learner()))
 }
 
 func openBrowser(url string) error {
@@ -741,6 +753,7 @@ func startProxy(a *app, o proxyOptions) (*http.Server, net.Listener, error) {
 		Limit: o.limit, Save: o.save,
 		Log:      log.New(os.Stderr, "woolly proxy: ", 0),
 		Activity: a.log,
+		Learner:  a.learner(),
 	}
 	ln, err := net.Listen("tcp", o.addr)
 	if err != nil {
@@ -814,6 +827,20 @@ func cmdDoctor(args []string) error {
 	}
 	if conflicts > 0 {
 		fmt.Println("  run 'woolly conflicts' to review disagreeing memories")
+	}
+	if ok, err := a.ollama.HasModel(ctx, a.ollama.ChatModel); err == nil && ok {
+		fmt.Printf("  woolly learn: ready (%s)\n", a.ollama.ChatModel)
+	} else if err == nil {
+		fmt.Printf("  woolly learn: off (run: ollama pull %s)\n", a.ollama.ChatModel)
+	}
+
+	fmt.Println("\nSync")
+	if cfg, err := peer.Load(a.home); err != nil {
+		fmt.Println("  error:", err)
+	} else if cfg == nil {
+		fmt.Println("  off (set it up with: woolly sync init)")
+	} else {
+		fmt.Printf("  on, %d linked devices (see woolly sync status)\n", len(cfg.Peers))
 	}
 
 	fmt.Println("\nBackground service")

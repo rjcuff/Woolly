@@ -1,9 +1,5 @@
-// Package connect adds Woolly to the MCP config of AI apps installed on this
-// computer, so users don't have to edit JSON by hand.
-//
-// Each app keeps its MCP servers in a JSON file. Connect merges a "woolly"
-// entry into that file and leaves everything else alone. Before it changes a
-// file it saves a backup next to it.
+// Package connect adds Woolly to the MCP config of AI apps on this computer.
+// It only touches the "woolly" entry and backs up each file first.
 package connect
 
 import (

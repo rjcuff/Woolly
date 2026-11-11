@@ -47,6 +47,10 @@ AI apps connected through MCP don't use the API. They talk to their own copy of 
 
 The `~/.woolly` folder can only be opened by your user account, and each memory file can only be read by you.
 
+## Sync is encrypted
+
+[Sync](/docs/sync) is off until you turn it on. Devices share a secret key from the join code, which is never sent over the network. Every message is encrypted and signed with it, and old messages are refused. Keep the code private: anyone with it, on your network, can read and change your memories.
+
 ## You can see what each app did
 
 Every memory records the app that saved it, and `woolly log` lists what each app saved, read and deleted. If an app saves something odd or reads more than it should, you'll see it there and on the **Activity** tab of the [review page](/docs/review). The log stays on your computer, readable only by you.

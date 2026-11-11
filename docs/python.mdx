@@ -60,6 +60,19 @@ response = client.chat.completions.create(
 
 With Anthropic, add it to `system`. With Ollama, add it as a system message.
 
+## Learn from a conversation
+
+With Ollama running, `learn` reads a conversation and saves the facts worth keeping. It updates older facts and skips ones Woolly already knows. See [Smart memory](/docs/learn).
+
+```python
+steps = w.learn([
+    {"role": "user", "content": "I just moved to Denver. Keep answers short."},
+    {"role": "assistant", "content": "Got it!"},
+])
+for s in steps:
+    print(s["action"], s["fact"])
+```
+
 ## Things your app figured out
 
 If your app infers something instead of the user saying it, mark it as `source="agent"`. If it disagrees with what the user said, Woolly keeps the user's version and saves yours as a conflict for them to review.

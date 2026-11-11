@@ -31,7 +31,8 @@ class WoollyTest(unittest.TestCase):
     def setUpClass(cls):
         cls.home = tempfile.mkdtemp(prefix="woolly-py-test-")
         cls.address = f"127.0.0.1:{free_port()}"
-        env = dict(os.environ, WOOLLY_HOME=cls.home, WOOLLY_NO_EMBED="1")
+        # No Ollama here, so learn() should fail with a clear error.
+        env = dict(os.environ, WOOLLY_HOME=cls.home, WOOLLY_NO_EMBED="1", OLLAMA_HOST="127.0.0.1:9")
         cls.server = subprocess.Popen(
             [BIN, "serve", "--addr", cls.address], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
@@ -68,6 +69,11 @@ class WoollyTest(unittest.TestCase):
         self.assertTrue(any("Bazel" in m.content for m in found))
         self.assertFalse(any("Make" in m.content for m in found))
         self.assertEqual(found[0].project, "monorepo")
+
+    def test_learn_needs_ollama(self):
+        with self.assertRaises(WoollyError) as ctx:
+            self.w.learn([{"role": "user", "content": "I moved to Denver"}])
+        self.assertIn("Ollama", str(ctx.exception))
 
     def test_newer_fact_replaces_older(self):
         self.w.remember("Lives in Austin", key="user.city")

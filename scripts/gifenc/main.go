@@ -1,10 +1,6 @@
-// Command gifenc turns the PNG frames written by web/scripts/demo.ts into
-// an animated GIF, using only the standard library.
+// Command gifenc builds a GIF from the frames web/scripts/demo.ts writes.
 //
 //	go run ./scripts/gifenc <frames-dir> <out.gif>
-//
-// The frames directory holds 0000.png, 0001.png, ... and durations.json, a
-// list of how long to show each frame in hundredths of a second.
 package main
 
 import (

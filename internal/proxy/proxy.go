@@ -1,10 +1,5 @@
-// Package proxy gives memory to AI apps that don't support MCP.
-//
-// It sits between an app and the AI service it calls (Ollama, an
-// OpenAI-compatible API, or Anthropic). On each chat request it adds the
-// memories relevant to the user's latest message as context, and it saves
-// facts the user states. Responses stream back untouched, and API keys pass
-// straight through without being stored.
+// Package proxy adds memories to chat requests for apps that don't support
+// MCP, and saves facts the user states. Replies stream back untouched.
 package proxy
 
 import (
@@ -23,6 +18,7 @@ import (
 
 	"github.com/rjcuff/woolly/internal/activity"
 	"github.com/rjcuff/woolly/internal/importer"
+	"github.com/rjcuff/woolly/internal/learn"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/recall"
 )
@@ -47,6 +43,9 @@ type Proxy struct {
 
 	// Activity, if set, records what the proxy saves and reads.
 	Activity *activity.Log
+	// Learner, if set, picks out facts with a local model. Without one, or
+	// if the model isn't available, simple rules are used.
+	Learner *learn.Learner
 }
 
 // AppName is how the proxy shows up in the activity log and on memories.
@@ -169,6 +168,23 @@ func (p *Proxy) addMemories(ctx context.Context, body []byte, kind format) ([]by
 }
 
 func (p *Proxy) saveFacts(text string) {
+	if p.Learner != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		steps, err := p.Learner.Learn(ctx, text, learn.Options{Via: AppName})
+		cancel()
+		if err == nil {
+			for _, s := range steps {
+				if s.Memory == nil || s.Action == "skip" {
+					continue
+				}
+				p.Activity.Add(activity.Entry{App: AppName, Action: "remember", IDs: []string{s.Memory.ID}})
+				if p.Log != nil {
+					p.Log.Printf("remembered: %s", s.Fact)
+				}
+			}
+			return
+		}
+	}
 	for _, c := range importer.Extract([]importer.Message{{Text: text, Time: time.Now()}}) {
 		res, err := p.Store.Remember(memory.RememberInput{
 			Content: c.Content, Key: c.Key, Tags: append([]string{"proxy"}, c.Tags...), Source: memory.SourceImport, Via: AppName,

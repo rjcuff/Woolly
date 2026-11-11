@@ -10,12 +10,10 @@ import (
 // HookApp is the name the startup hook gives itself in the activity log.
 const HookApp = "claude-code"
 
-// hookArgs ends every startup hook command Woolly adds, which is how Woolly
-// finds its own hook again without touching anyone else's.
+// hookArgs ends every hook command Woolly adds, so it can find its own.
 const hookArgs = "context --app " + HookApp
 
-// hookMatcher runs the hook when a session starts fresh, after /clear and
-// after the conversation is compacted. Resumed sessions already have it.
+// hookMatcher skips resumed sessions, which already have the context.
 const hookMatcher = "startup|clear|compact"
 
 // ClaudeSettings is Claude Code's user settings file.
@@ -95,9 +93,7 @@ func HasStartupHook(path string) bool {
 	return gi >= 0
 }
 
-// AddStartupHook adds a SessionStart hook to Claude Code's settings that runs
-// `woolly context`, so every session starts with what Woolly knows. All other
-// settings and hooks are kept as they are.
+// AddStartupHook adds a SessionStart hook that runs `woolly context`.
 func AddStartupHook(path, woolly string, dryRun bool) (Result, error) {
 	cfg, orig, err := readConfig(path)
 	if err != nil {
@@ -132,8 +128,7 @@ func AddStartupHook(path, woolly string, dryRun bool) (Result, error) {
 	return res, writeConfig(path, cfg, orig)
 }
 
-// RemoveStartupHook takes Woolly's hook out of Claude Code's settings and
-// tidies up any lists it leaves empty.
+// RemoveStartupHook removes Woolly's hook and any lists it leaves empty.
 func RemoveStartupHook(path string, dryRun bool) (Result, error) {
 	cfg, orig, err := readConfig(path)
 	if err != nil {

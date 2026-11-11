@@ -1,8 +1,5 @@
-// Package recall finds the memories most relevant to a query.
-//
-// It always runs a BM25 keyword search, which needs nothing but the files.
-// When an embedder (Ollama) is available it adds semantic similarity, so
-// "where do I live?" can find "moved to Denver" with no shared words.
+// Package recall finds the memories most relevant to a query, with keyword
+// search plus Ollama embeddings when they're available.
 package recall
 
 import (

@@ -31,12 +31,13 @@ __all__ = [
     "WoollyNotRunning",
     "context",
     "forget",
+    "learn",
     "profile",
     "recall",
     "remember",
 ]
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 _default = None
 
@@ -71,3 +72,8 @@ def profile():
 def context(query, limit=5):
     """Get a note of relevant memories to add to a prompt. See :meth:`Woolly.context`."""
     return _client().context(query, limit=limit)
+
+
+def learn(text, project=None, dry_run=False):
+    """Pick out facts from a conversation with a local model and save them."""
+    return _client().learn(text, project=project, dry_run=dry_run)

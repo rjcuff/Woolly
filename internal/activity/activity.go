@@ -1,9 +1,5 @@
-// Package activity keeps a local log of what each app did with your
-// memories: what it saved, what it read and what it deleted.
-//
-// The log is a JSON Lines file in ~/.woolly, readable only by you. It never
-// leaves your computer. It stores memory IDs and search queries, not the
-// memories themselves.
+// Package activity logs what each app saved, read and deleted. The log stays
+// in ~/.woolly and holds memory IDs and queries, not the memories themselves.
 package activity
 
 import (
@@ -31,8 +27,7 @@ type Entry struct {
 	Detail string    `json:"detail,omitempty"`
 }
 
-// Log appends entries to a file. A nil *Log does nothing, so callers that
-// don't care about activity can pass nil.
+// Log appends entries to a file. A nil *Log does nothing.
 type Log struct {
 	path string
 	mu   sync.Mutex
@@ -51,8 +46,7 @@ func (l *Log) Path() string {
 	return l.path
 }
 
-// Add records an entry. Logging is best effort: a failure never stops the
-// action being logged.
+// Add records an entry. Errors are ignored.
 func (l *Log) Add(e Entry) {
 	if l == nil {
 		return
@@ -83,8 +77,7 @@ func (l *Log) Add(e Entry) {
 	_, _ = f.Write(append(line, '\n'))
 }
 
-// Recent returns up to n entries, newest first. If app is set, only entries
-// from apps whose name contains it (ignoring case) are returned.
+// Recent returns up to n entries, newest first, optionally for one app.
 func (l *Log) Recent(n int, app string) ([]Entry, error) {
 	if l == nil {
 		return nil, nil
@@ -138,8 +131,7 @@ var known = map[string]string{
 	"zed":                   "Zed",
 }
 
-// AppName turns the name and title an MCP client sends into a short name a
-// person would recognize. Unknown clients keep their own title or name.
+// AppName turns an MCP client's name into one people recognize.
 func AppName(name, title string) string {
 	n := strings.ToLower(strings.TrimSpace(name))
 	if v, ok := known[n]; ok {

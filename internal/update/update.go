@@ -1,8 +1,5 @@
-// Package update checks GitHub for a newer Woolly release and installs it.
-//
-// It is the only part of Woolly that contacts the internet, and only when the
-// user runs `woolly update`. Downloads are checked against the release's
-// published checksums before anything is replaced.
+// Package update installs the latest release from GitHub after checking it
+// against the published checksums. It's the only code that goes online.
 package update
 
 import (

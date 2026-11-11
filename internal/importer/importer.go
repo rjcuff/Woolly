@@ -1,10 +1,5 @@
-// Package importer pulls facts about the user out of chat history exported
-// from ChatGPT and Claude.
-//
-// It only looks at what the user wrote, and only keeps short, plain
-// statements about themselves ("I live in Denver", "I prefer tabs",
-// "remember that my sister's name is Ana"). Questions, code and long
-// messages are skipped. Nothing leaves the machine.
+// Package importer pulls short statements the user made about themselves out
+// of ChatGPT and Claude exports.
 package importer
 
 import (

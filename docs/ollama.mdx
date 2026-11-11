@@ -1,10 +1,10 @@
 ---
 title: Using Ollama
-description: Optional. Turn on search by meaning, still fully local.
+description: Optional. Turn on search by meaning and smart memory, still fully local.
 ---
 
 <Callout type="info" title="Ollama is optional">
-  Woolly works without it. Ollama only makes search smarter.
+  Woolly works without it. Ollama makes search smarter and lets Woolly pick out facts from your conversations.
 </Callout>
 
 Without Ollama, Woolly finds memories by matching words. With Ollama, it also understands meaning, so "what pets do I have" finds "Biscuit is a golden retriever" even though no words match.
@@ -28,3 +28,13 @@ woolly doctor
 
 You should see `search: semantic + keyword`.
 To use a different model, set `WOOLLY_EMBED_MODEL`. To turn Ollama off, set `WOOLLY_NO_EMBED=1`.
+
+## Smart memory
+
+Pull one more model and Woolly can read your conversations and save the facts worth keeping:
+
+```sh
+ollama pull qwen2.5:3b
+```
+
+See [Smart memory](/docs/learn).

@@ -387,6 +387,8 @@ const verbs: Record<string, string> = {
   resolve: 'Settled a conflict, keeping',
   empty_trash: 'Emptied the trash',
   import: 'Imported',
+  learn: 'Learned',
+  sync: 'Synced',
 };
 
 function describeEntry(e: Activity, find: (id: string) => Memory | undefined) {
@@ -403,6 +405,8 @@ function describeEntry(e: Activity, find: (id: string) => Memory | undefined) {
     case 'recall':
       return e.query ? `${verb} for “${e.query}”, got ${e.count ?? 0}` : `Read ${e.count ?? 0} memories`;
     case 'import':
+    case 'learn':
+    case 'sync':
       return `${verb} ${e.count ?? 0} memories`;
     case 'empty_trash':
       return `${verb} (${e.count ?? 0})`;

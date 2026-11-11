@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/rjcuff/woolly/internal/activity"
+	"github.com/rjcuff/woolly/internal/learn"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/profile"
 	"github.com/rjcuff/woolly/internal/recall"
@@ -42,7 +43,7 @@ func appOf(r *http.Request) string {
 // Handler returns the HTTP handler for the Woolly API. If log is set, saves,
 // reads and deletes are recorded in it. Reads by the review page are not,
 // since it reads everything each time it opens.
-func Handler(store *memory.Store, engine *recall.Engine, version, token string, log *activity.Log) http.Handler {
+func Handler(store *memory.Store, engine *recall.Engine, version, token string, log *activity.Log, learner *learn.Learner) http.Handler {
 	mux := http.NewServeMux()
 	record := func(r *http.Request, action string, ids []string, query string, count int) {
 		app := appOf(r)
@@ -248,6 +249,39 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string, 
 		}
 		record(r, "resolve", []string{kept.ID}, "", len(replaced))
 		writeJSON(w, http.StatusOK, map[string]any{"kept": kept, "superseded": orEmpty(replaced)})
+	})
+
+	mux.HandleFunc("POST /api/learn", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Text    string `json:"text"`
+			Project string `json:"project"`
+			DryRun  bool   `json:"dry_run"`
+		}
+		if !readJSON(w, r, &req) {
+			return
+		}
+		if learner == nil {
+			writeError(w, http.StatusServiceUnavailable, "learning isn't available")
+			return
+		}
+		steps, err := learner.Learn(r.Context(), req.Text, learn.Options{Project: req.Project, Via: appOf(r), DryRun: req.DryRun})
+		if err != nil {
+			writeError(w, http.StatusServiceUnavailable, err.Error()+". Learning needs Ollama with a chat model running")
+			return
+		}
+		var ids []string
+		for _, s := range steps {
+			if s.Memory != nil && s.Action != "skip" && !req.DryRun {
+				ids = append(ids, s.Memory.ID)
+			}
+		}
+		if len(ids) > 0 {
+			record(r, "learn", ids, "", len(ids))
+		}
+		if steps == nil {
+			steps = []learn.Step{}
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"steps": steps})
 	})
 
 	mux.HandleFunc("GET /api/activity", func(w http.ResponseWriter, r *http.Request) {

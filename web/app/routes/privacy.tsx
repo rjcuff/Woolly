@@ -29,6 +29,14 @@ export default function Privacy() {
           can check on them. It's stored in <code>~/.woolly/activity.log</code> and is never sent anywhere.
         </li>
         <li>
+          <code>woolly learn</code> sends text to Ollama at the address you set, by default on your own
+          computer.
+        </li>
+        <li>
+          If you turn on sync, your memories are sent, encrypted, to the other devices you linked, over
+          your own network. They never go to us or any other server.
+        </li>
+        <li>
           If you turn on search by meaning, Woolly sends text to Ollama at the address you set. By
           default that is Ollama running on your own computer.
         </li>

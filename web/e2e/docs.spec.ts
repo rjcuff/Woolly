@@ -21,9 +21,9 @@ test('search finds pages', async ({ page, isMobile }) => {
   }
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  await page.keyboard.type('ollama');
+  await dialog.locator('input').first().fill('ollama');
   // The search index loads on first use, which can be slow when many tests run at once.
-  await expect(dialog.getByText('Using Ollama').first()).toBeVisible({ timeout: 15_000 });
+  await expect(dialog).toContainText('Using Ollama', { timeout: 15_000 });
 });
 
 test('copy markdown gives feedback', async ({ page, context, browserName }) => {

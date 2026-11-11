@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.0
+
+- Smart memory. `woolly learn` uses a model running in Ollama to pick out facts from a conversation or any text. A fact on the same subject as an older one replaces it, like a new city or a new editor, and repeats are skipped. Facts are saved as things an AI figured out, so they never overrule what you said yourself, and secrets and instructions are still refused. Also in the API (`POST /api/learn`) and Python (`w.learn(...)`). The default model is `qwen2.5:3b`; set `WOOLLY_LLM_MODEL` to change it. See [Smart memory](https://usewoolly.com/docs/learn).
+- The proxy uses the model to save facts from your chats when it's available.
+- Sync between your devices. `woolly sync init` and `woolly sync join` link your laptop, desktop or Raspberry Pi over your own network, with no cloud. Every message is encrypted and signed with a key only your devices have. The newest change wins, and memories deleted for good stay deleted everywhere. `woolly serve` and the background service sync every 5 minutes. See [Sync your devices](https://usewoolly.com/docs/sync).
+- Builds for 32-bit ARM, for Raspberry Pi OS 32-bit. The install script picks it automatically.
+- `woolly doctor` shows whether learning and sync are ready.
+- Forgetting and restoring a memory now update its time, so sync knows it's the newest change.
+- The home page stays on one screen on iPhone.
+- Python package 0.3.0 adds `learn()`.
+
 ## 0.8.0
 
 - Claude Desktop can install Woolly with a double-click: download `woolly.mcpb` from the latest release. It holds Woolly for macOS, Windows and Linux.

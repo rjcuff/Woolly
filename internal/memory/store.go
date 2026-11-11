@@ -211,14 +211,9 @@ type RememberResult struct {
 	ConflictsWith *Memory  `json:"conflicts_with,omitempty"`
 }
 
-// Remember stores a new memory and applies Woolly's freshness rules:
-//
-//   - The same content again is a duplicate; the existing memory is refreshed.
-//   - A memory with the same key as existing ones supersedes them, so recall
-//     returns the newest fact instead of a stale one.
-//   - Unless it comes from a less trusted source than the current fact (an
-//     agent guess vs. something the user said). Then it is stored as a
-//     conflict for the user to review, and the trusted fact stays active.
+// Remember saves a memory. A repeat refreshes the existing one. A newer fact
+// with the same key replaces older ones, unless it comes from a less trusted
+// source, in which case it's saved as a conflict for the user to review.
 func (s *Store) Remember(in RememberInput) (*RememberResult, error) {
 	content := strings.TrimSpace(in.Content)
 	if content == "" {
@@ -433,7 +428,12 @@ func (s *Store) Forget(id string) (Memory, error) {
 	if err := os.MkdirAll(s.trashDir(), 0o700); err != nil {
 		return Memory{}, err
 	}
-	if err := os.Rename(m.file, filepath.Join(s.trashDir(), m.ID+".md")); err != nil && !errors.Is(err, os.ErrNotExist) {
+	// The new time lets other devices see that forgetting is the newest change.
+	m.UpdatedAt = time.Now().UTC()
+	if err := writeFile(filepath.Join(s.trashDir(), m.ID+".md"), encode(m)); err != nil {
+		return Memory{}, err
+	}
+	if err := os.Remove(m.file); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return Memory{}, err
 	}
 	delete(s.mems, m.ID)
@@ -490,18 +490,30 @@ func (s *Store) Restore(id string) (Memory, error) {
 	if match == "" {
 		return Memory{}, ErrNotFound
 	}
-	dst := filepath.Join(s.dir, match)
-	if err := os.Rename(filepath.Join(trash, match), dst); err != nil {
+	src := filepath.Join(trash, match)
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return Memory{}, err
+	}
+	m, err := decode(data)
+	if err != nil {
+		return Memory{}, err
+	}
+	m.UpdatedAt = time.Now().UTC()
+	if err := writeFile(filepath.Join(s.dir, match), encode(m)); err != nil {
+		return Memory{}, err
+	}
+	if err := os.Remove(src); err != nil {
 		return Memory{}, err
 	}
 	if err := s.load(); err != nil {
 		return Memory{}, err
 	}
-	m, ok := s.mems[strings.TrimSuffix(match, ".md")]
+	got, ok := s.mems[strings.TrimSuffix(match, ".md")]
 	if !ok {
 		return Memory{}, ErrNotFound
 	}
-	return m.clone(), nil
+	return got.clone(), nil
 }
 
 // EmptyTrash permanently deletes everything in the trash.
@@ -522,6 +534,7 @@ func (s *Store) EmptyTrash() (int, error) {
 		}
 		if err := os.Remove(filepath.Join(s.trashDir(), e.Name())); err == nil {
 			n++
+			s.addTombstone(strings.TrimSuffix(e.Name(), ".md"))
 		}
 	}
 	return n, nil

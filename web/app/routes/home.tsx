@@ -1,4 +1,5 @@
 import type { Route } from './+types/home';
+import { useEffect } from 'react';
 import { Link } from 'react-router';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { getStars } from '@/lib/github';
@@ -30,8 +31,13 @@ export async function loader() {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
+  useEffect(() => {
+    document.documentElement.classList.add('one-screen');
+    return () => document.documentElement.classList.remove('one-screen');
+  }, []);
+
   return (
-    <div className="flex h-dvh flex-col overflow-hidden px-[max(20px,env(safe-area-inset-left))]">
+    <div className="flex h-dvh flex-col overflow-hidden overscroll-none px-[max(20px,env(safe-area-inset-left))]">
       <SiteHeader stars={loaderData?.stars} />
 
       <main className="flex flex-1 items-center justify-center pb-[6vh]">

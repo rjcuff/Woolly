@@ -7,7 +7,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 DEFAULT_ADDRESS = "127.0.0.1:11435"
 
@@ -204,6 +204,21 @@ class Woolly:
             body["project"] = project
         r = self._request("POST", "/api/recall", body)
         return [Memory.from_json(x["memory"], score=x.get("score")) for x in r.get("results") or []]
+
+    def learn(self, text: Union[str, List[Dict[str, Any]]], project: Optional[str] = None, dry_run: bool = False) -> List[Dict[str, Any]]:
+        """Pick out facts from a conversation with a local model and save them.
+
+        ``text`` is a string or a list of chat messages like
+        ``{"role": "user", "content": "..."}``. Needs Ollama running. Returns
+        one step per fact, each with an ``action``: add, update, skip,
+        conflict or refused.
+        """
+        if not isinstance(text, str):
+            text = "\n".join(f"{m.get('role', 'user')}: {m.get('content', '')}" for m in text)
+        body: Dict[str, Any] = {"text": text, "dry_run": dry_run}
+        if project:
+            body["project"] = project
+        return self._request("POST", "/api/learn", body).get("steps") or []
 
     def context(self, query: str, limit: int = 5, project: Optional[str] = None) -> str:
         """Return a short note of relevant memories to add to an AI prompt.

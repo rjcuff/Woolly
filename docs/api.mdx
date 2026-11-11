@@ -65,6 +65,7 @@ curl -X POST localhost:11435/api/recall \
 | `GET` | `/api/profile` | Add `?format=markdown` for Markdown |
 | `GET` | `/api/conflicts` | |
 | `POST` | `/api/resolve` | `keep_id` |
+| `POST` | `/api/learn` | `text`, plus optional `project`, `dry_run`. Needs Ollama. See [Smart memory](/docs/learn) |
 | `GET` | `/api/activity` | Add `?app=cursor` for one app, `?limit=50` for fewer |
 | `GET` | `/api/version` | |
 

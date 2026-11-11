@@ -13,6 +13,9 @@ Woolly needs no configuration. These settings are there if you want them.
 | `OLLAMA_HOST` | `127.0.0.1:11434` | Where to find Ollama |
 | `WOOLLY_EMBED_MODEL` | `nomic-embed-text` | Ollama model used for search by meaning |
 | `WOOLLY_NO_EMBED` | not set | Set to any value to turn Ollama off |
+| `WOOLLY_LLM_MODEL` | `qwen2.5:3b` | Ollama model for `woolly learn` |
+| `WOOLLY_SYNC_ADDR` | `0.0.0.0:11437` | Where Woolly listens for your other devices |
+| `WOOLLY_PROJECT` | not set | Project name to use instead of the git repo's |
 
 ## What's in ~/.woolly
 
@@ -22,9 +25,11 @@ Woolly needs no configuration. These settings are there if you want them.
 | `trash/` | Forgotten memories, until you empty the trash |
 | `activity.log` | What each app saved, read and deleted. See `woolly log` |
 | `token` | The secret the local API asks for |
+| `sync.json` | Your sync key and linked devices, if you set up sync |
+| `deleted` | IDs of memories deleted for good, so sync deletes them everywhere |
 | `index/` | Search data built from your memories. Safe to delete |
 | `logs/` | Output from the background service |
 
 ## Syncing between computers
 
-Because memories are plain files, you can sync them with any tool you already use. Point `WOOLLY_HOME` at a synced folder, or keep `~/.woolly/memories` in a private git repo.
+Use [woolly sync](/docs/sync) to keep your devices in step over your own network. Because memories are plain files, any sync tool you already use also works, or keep `~/.woolly/memories` in a private git repo.

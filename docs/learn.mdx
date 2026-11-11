@@ -1,0 +1,58 @@
+---
+title: Smart memory
+description: Let a local model pick out facts from your conversations. Nothing leaves your computer.
+---
+
+`woolly learn` reads a conversation or any text, and a model running in [Ollama](https://ollama.com) on your computer picks out the facts worth keeping. It's what cloud memory services do, without sending anything to a server.
+
+## Set it up
+
+Install Ollama, then pull the model Woolly uses:
+
+```sh
+ollama pull qwen2.5:3b
+```
+
+It's about 2 GB. `woolly doctor` shows `woolly learn: ready` when it's set up.
+
+## Use it
+
+```sh
+woolly learn "I just moved to Denver and switched from VS Code to Cursor. Keep answers short."
+```
+
+```txt
+Updated:       Lives in Denver
+Updated:       Switched from VS Code to Cursor
+Added:         Prefers short answers
+```
+
+Pipe in a whole conversation:
+
+```sh
+cat chat.txt | woolly learn
+```
+
+Add `--project acme` so facts about a codebase go to that project, and `--dry-run` to see what it would save without saving.
+
+## What it does with each fact
+
+| Result | Meaning |
+| --- | --- |
+| Added | A new fact |
+| Updated | It replaces an older fact on the same subject, like a new city or a new editor. The old one stays in History |
+| Already known | Woolly already has it |
+| Conflict | It disagrees with something you told Woolly yourself. Your version stays, and this one waits on the review page |
+| Refused | It looked like a password, a key or instructions to an AI |
+
+Facts from `woolly learn` are saved as things an AI figured out, so they never overrule what you said yourself.
+
+## Where else it's used
+
+- **The proxy** uses it to save facts from your chats when the model is available, and simpler rules when it isn't. See [Proxy](/docs/proxy).
+- **The API:** `POST /api/learn` with `text`, plus optional `project` and `dry_run`. See [API](/docs/api).
+- **Python:** `w.learn(messages)`. See [Python](/docs/python).
+
+## Choosing a model
+
+Set `WOOLLY_LLM_MODEL` to use another Ollama model. Woolly was tested with `qwen2.5:3b`, `llama3.2` and `gemma3:4b`. `qwen2.5:3b` missed the fewest facts and never made one up, so it's the default. Bigger models do better if your computer can run them.

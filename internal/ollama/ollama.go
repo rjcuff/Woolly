@@ -20,10 +20,15 @@ import (
 // DefaultEmbedModel is a small, fast embedding model (~270 MB).
 const DefaultEmbedModel = "nomic-embed-text"
 
+// DefaultChatModel picks out facts for `woolly learn`. Of the small models
+// tested, it missed the fewest facts and never made one up.
+const DefaultChatModel = "qwen2.5:3b"
+
 // Client talks to a local Ollama server.
 type Client struct {
 	Host       string
 	EmbedModel string
+	ChatModel  string
 	HTTP       *http.Client
 }
 
@@ -33,9 +38,14 @@ func FromEnv() *Client {
 	if model == "" {
 		model = DefaultEmbedModel
 	}
+	chat := strings.TrimSpace(os.Getenv("WOOLLY_LLM_MODEL"))
+	if chat == "" {
+		chat = DefaultChatModel
+	}
 	return &Client{
 		Host:       normalizeHost(os.Getenv("OLLAMA_HOST")),
 		EmbedModel: model,
+		ChatModel:  chat,
 		HTTP:       &http.Client{Timeout: 2 * time.Minute},
 	}
 }
@@ -110,6 +120,27 @@ func (c *Client) HasModel(ctx context.Context, name string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+// Chat sends one system and one user message and returns the JSON reply.
+// format is "json" or a JSON schema the reply must match.
+func (c *Client) Chat(ctx context.Context, system, user string, format any) (string, error) {
+	var out struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	}
+	err := c.do(ctx, http.MethodPost, "/api/chat", map[string]any{
+		"model":  c.ChatModel,
+		"stream": false,
+		"format": format,
+		"messages": []map[string]string{
+			{"role": "system", "content": system},
+			{"role": "user", "content": user},
+		},
+		"options": map[string]any{"temperature": 0},
+	}, &out)
+	return out.Message.Content, err
 }
 
 func (c *Client) do(ctx context.Context, method, path string, body, out any) error {

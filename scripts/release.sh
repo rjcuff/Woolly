@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 rm -rf dist
 mkdir -p dist
 
-for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 windows/arm64; do
+for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 linux/arm windows/amd64 windows/arm64; do
   os=${target%/*}
   arch=${target#*/}
   name="woolly_${os}_${arch}"
@@ -17,7 +17,8 @@ for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 wi
   [ "$os" = windows ] && bin="woolly.exe"
 
   mkdir -p "$dir"
-  CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath \
+  # GOARM=7 runs on Raspberry Pi 2 and newer with a 32-bit OS.
+  CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOARM=7 go build -trimpath \
     -ldflags "-s -w -X main.version=$version" -o "$dir/$bin" ./cmd/woolly
   cp LICENSE README.md "$dir/"
 

@@ -1,12 +1,5 @@
-// Package service runs Woolly in the background, the way Ollama does: it
-// starts when you log in and restarts if it stops.
-//
-// Each OS has its own mechanism, and none of them need admin rights:
-//
-//   - macOS: a LaunchAgent in ~/Library/LaunchAgents
-//   - Linux: a systemd user unit in ~/.config/systemd/user
-//   - Windows: a value under HKCU\...\CurrentVersion\Run, started through
-//     conhost --headless so no console window appears
+// Package service starts Woolly at login: a LaunchAgent on macOS, a systemd
+// user unit on Linux, and a Run key on Windows. None need admin rights.
 package service
 
 import (

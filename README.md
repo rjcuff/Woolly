@@ -46,6 +46,10 @@ Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm http
 
 **Loads by itself.** In Claude Code, every session starts with your profile and notes about the project you're in. No need to ask.
 
+**Learns from your chats.** `woolly learn` uses a model running in Ollama to pick out facts from a conversation. Newer facts replace older ones, and nothing leaves your computer.
+
+**Syncs your devices.** `woolly sync` keeps your laptop, desktop and Raspberry Pi in step over your own network. Encrypted, no cloud, no account.
+
 **Keeps projects apart.** Notes about a codebase stay with that repo, and facts about you go everywhere. Your AI in one project never gets another project's notes.
 
 **Shows you everything.** `woolly ui` opens a page where you can search, edit and delete every memory. Or open the files yourself. Every memory notes which app saved it, and `woolly log` shows what each app saved, read and deleted.
@@ -88,6 +92,8 @@ woolly recall "where do I live"
 woolly profile          # a summary of what Woolly knows about you
 woolly ui               # review and edit memories in your browser
 woolly log              # what each app saved, read and deleted
+woolly learn "I just moved to Denver"   # a local model picks out the facts
+woolly sync init        # keep your devices in step
 woolly import chatgpt ~/Downloads/export.zip --dry-run
 woolly forget <id>      # moves it to the trash; undo with woolly restore <id>
 woolly proxy            # memory for Ollama, OpenAI and Anthropic apps
@@ -125,7 +131,8 @@ No. Woolly works on its own. If Ollama is running, Woolly also uses it to search
 | `sdk/python` | The `woolly-ai` Python package |
 | `web` | Website and docs site |
 | `scripts` | Install, release and Homebrew scripts |
-| `packaging/homebrew` | The Homebrew formula, kept in sync with the tap |
+| `packaging/homebrew` | The Homebrew formula, kept in step with the tap |
+| `packaging/mcpb` | The Claude Desktop bundle |
 
 ## More
 
