@@ -66,7 +66,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                   </Link>
                   <span
                     role="tooltip"
-                    className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-fd-foreground px-2 py-1 text-[13px] font-medium text-fd-background opacity-0 transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
+                    className="pointer-events-none absolute top-full left-1/2 mt-2 -translate-x-1/2 -translate-y-1 whitespace-nowrap rounded-md bg-fd-foreground px-2 py-1 text-[13px] font-medium text-fd-background opacity-0 transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
                   >
                     {app.name}
                   </span>
