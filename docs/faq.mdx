@@ -41,11 +41,11 @@ Your memories are not touched.
 
 ## Which apps work with Woolly?
 
-Any app that supports MCP, including Claude Code, Claude Desktop and Cursor. See [Connect your apps](/docs/connect).
+Any app that supports MCP, including Claude Code, Claude Desktop, Cursor, VS Code and Windsurf. Run `woolly connect` to set them all up at once. See [Connect your apps](/docs/connect).
 
 ## Can I use Woolly with Ollama?
 
-Yes. Run `woolly proxy` and point Ollama at it:
+Yes. Run `woolly service install` (or `woolly proxy` in a terminal) and point Ollama at it:
 
 ```sh
 OLLAMA_HOST=127.0.0.1:11436 ollama run llama3.2
