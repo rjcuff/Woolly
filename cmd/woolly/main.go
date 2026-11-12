@@ -619,7 +619,7 @@ func cmdServe(args []string) error {
 
 	errc := make(chan error, 2)
 	go func() {
-		errc <- server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.log, a.learner()))
+		errc <- server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.serverOptions()))
 	}()
 	if _, err := startSync(a, true); err != nil {
 		fmt.Fprintln(os.Stderr, "woolly: sync is off:", err)
@@ -663,7 +663,7 @@ func cmdUI(args []string) error {
 	}
 	fmt.Printf("Woolly review page: %s\nPress Ctrl+C to stop.\n", url)
 	_ = openBrowser(link)
-	return server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.log, a.learner()))
+	return server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.serverOptions()))
 }
 
 func openBrowser(url string) error {

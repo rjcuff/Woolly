@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type Activity, api, type Memory, splitTags } from './api';
+import { ChatView } from './Chat';
 
-type View = 'current' | 'conflicts' | 'all' | 'trash' | 'activity' | 'profile';
+type View = 'chat' | 'current' | 'conflicts' | 'all' | 'trash' | 'activity' | 'profile';
 
 const views: { id: View; label: string }[] = [
+  { id: 'chat', label: 'Chat' },
   { id: 'current', label: 'Memories' },
   { id: 'conflicts', label: 'Conflicts' },
   { id: 'all', label: 'History' },
@@ -12,10 +14,16 @@ const views: { id: View; label: string }[] = [
   { id: 'profile', label: 'Profile' },
 ];
 
+// ?view=chat opens a tab directly. The desktop app opens on Chat.
+function initialView(): View {
+  const v = new URLSearchParams(window.location.search).get('view');
+  return views.some((x) => x.id === v) ? (v as View) : 'current';
+}
+
 type Notice = { kind: 'ok' | 'error'; text: string; undo?: () => void } | null;
 
 export function App() {
-  const [view, setView] = useState<View>('current');
+  const [view, setView] = useState<View>(initialView);
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<Memory[]>([]);
   const [conflictCount, setConflictCount] = useState(0);
@@ -39,7 +47,9 @@ export function App() {
       setById(new Map(all.map((m) => [m.id, m])));
       setProjects([...new Set(all.map((m) => m.project).filter((p): p is string => !!p))].sort());
       setConflictCount(conflicts.length);
-      if (view === 'profile') {
+      if (view === 'chat') {
+        // The chat loads its own data.
+      } else if (view === 'profile') {
         setProfileText(await api.profile());
       } else if (view === 'activity') {
         const [log, trash] = await Promise.all([api.activity(), api.trash()]);
@@ -115,7 +125,9 @@ export function App() {
           </div>
         )}
 
-        {view === 'profile' ? (
+        {view === 'chat' ? (
+          <ChatView onError={(text) => flash({ kind: 'error', text })} onChanged={load} />
+        ) : view === 'profile' ? (
           <ProfileView text={profileText} onCopied={() => flash({ kind: 'ok', text: 'Copied' })} />
         ) : view === 'activity' ? (
           loading ? null : <ActivityView entries={activity} find={(id) => byId.get(id) ?? trashById.get(id)} />

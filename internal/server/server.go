@@ -13,8 +13,10 @@ import (
 	"time"
 
 	"github.com/rjcuff/woolly/internal/activity"
+	"github.com/rjcuff/woolly/internal/chats"
 	"github.com/rjcuff/woolly/internal/learn"
 	"github.com/rjcuff/woolly/internal/memory"
+	"github.com/rjcuff/woolly/internal/ollama"
 	"github.com/rjcuff/woolly/internal/profile"
 	"github.com/rjcuff/woolly/internal/recall"
 )
@@ -40,10 +42,20 @@ func appOf(r *http.Request) string {
 	return "API"
 }
 
+// Options are the optional parts of the API. Missing ones turn their
+// endpoints off.
+type Options struct {
+	Activity *activity.Log
+	Learner  *learn.Learner
+	Ollama   *ollama.Client
+	Chats    *chats.Store
+}
+
 // Handler returns the HTTP handler for the Woolly API. If log is set, saves,
 // reads and deletes are recorded in it. Reads by the review page are not,
 // since it reads everything each time it opens.
-func Handler(store *memory.Store, engine *recall.Engine, version, token string, log *activity.Log, learner *learn.Learner) http.Handler {
+func Handler(store *memory.Store, engine *recall.Engine, version, token string, opts Options) http.Handler {
+	log, learner := opts.Activity, opts.Learner
 	mux := http.NewServeMux()
 	record := func(r *http.Request, action string, ids []string, query string, count int) {
 		app := appOf(r)
@@ -301,6 +313,8 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string, 
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"activity": entries})
 	})
+
+	registerChat(mux, store, engine, opts, record)
 
 	return LocalOnly(requireToken(token, mux))
 }

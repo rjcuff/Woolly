@@ -9,8 +9,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rjcuff/woolly/internal/chats"
 	"github.com/rjcuff/woolly/internal/learn"
+	"github.com/rjcuff/woolly/internal/server"
 )
+
+func (a *app) serverOptions() server.Options {
+	return server.Options{Activity: a.log, Learner: a.learner(), Ollama: a.ollama, Chats: chats.Open(a.home)}
+}
 
 func (a *app) learner() *learn.Learner {
 	return &learn.Learner{Store: a.store, Engine: a.engine, Model: a.ollama}

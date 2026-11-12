@@ -28,7 +28,7 @@ func setup(t *testing.T) (http.Handler, string) {
 	if info.Mode().Perm() != 0o600 {
 		t.Fatalf("token file mode %v, want 0600", info.Mode().Perm())
 	}
-	return Handler(store, recall.New(store, nil, ""), "test", token, activity.Open(home), nil), token
+	return Handler(store, recall.New(store, nil, ""), "test", token, Options{Activity: activity.Open(home)}), token
 }
 
 func do(h http.Handler, method, path, body string, headers map[string]string) *httptest.ResponseRecorder {

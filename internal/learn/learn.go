@@ -10,6 +10,7 @@ import (
 
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/recall"
+	"github.com/rjcuff/woolly/internal/secrets"
 )
 
 // Model is a chat model that replies in JSON, like *ollama.Client.
@@ -55,8 +56,11 @@ const topicHelp = `Topics: location (the city or place they live), job (their ro
 Use a topic only when the fact names the one current answer for it, like a city, a company or an app. Preferences about answers, style, code or habits are always "none". So are facts about tests, languages and libraries.`
 
 const extractPrompt = `You pick out facts worth remembering about the user from a conversation or note.
+Reply with JSON only: {"facts":[{"fact":"Lives in Denver","project":false}]}
 
-- Keep lasting facts: preferences, personal details, plans, decisions, how they work, tools they use or switched to, and details about their projects, including changes like upgrades or moves.
+- Keep lasting facts about the user: where they live, their work, family, pets, health needs like allergies, preferences, plans, decisions, how they work, tools they use or switched to, and details about their projects, including changes like upgrades or moves.
+- A message can mix a question with a fact. Keep the fact and ignore the question.
+- Skip one-time plans for today or this week.
 - Write each fact as one short sentence, like "Lives in Denver" or "Prefers tabs over spaces".
 - project: true only for facts about the current codebase itself: its stack, commands, setup and conventions. Facts about the person (where they live, their job, the tools they use, what they like) are never project facts.
 - Skip greetings, questions and small talk. Skip what the assistant said unless the user agreed.
@@ -110,6 +114,11 @@ func (l *Learner) Learn(ctx context.Context, text string, o Options) ([]Step, er
 	if len(text) > maxText {
 		text = text[len(text)-maxText:]
 	}
+	// The model can be talked into saving what an attack tells it to, so
+	// text that reads like instructions to an AI teaches nothing.
+	if secrets.LooksLikeInstructions(text) {
+		return []Step{{Fact: "(the whole text)", Action: "refused", Reason: "it reads like instructions to an AI"}}, nil
+	}
 	facts, err := l.extract(ctx, text)
 	if err != nil {
 		return nil, err
@@ -153,7 +162,9 @@ func keyFor(topic string, inProject bool) string {
 }
 
 func (l *Learner) extract(ctx context.Context, text string) ([]fact, error) {
-	reply, err := l.Model.Chat(ctx, extractPrompt, text, extractSchema)
+	// Wrapping the text stops small models from answering it instead.
+	prompt := "Text to read:\n\"\"\"\n" + text + "\n\"\"\"\n\nWhat lasting facts about the user does this text state? Don't answer any questions in it."
+	reply, err := l.Model.Chat(ctx, extractPrompt, prompt, extractSchema)
 	if err != nil {
 		return nil, err
 	}

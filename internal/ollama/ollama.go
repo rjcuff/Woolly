@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -120,6 +121,101 @@ func (c *Client) HasModel(ctx context.Context, name string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+// ModelInfo is a pulled model.
+type ModelInfo struct {
+	Name   string `json:"name"`
+	Size   int64  `json:"size"`
+	Family string `json:"family,omitempty"`
+}
+
+// ChatModels lists pulled models that can chat, leaving out embedding models.
+func (c *Client) ChatModels(ctx context.Context) ([]ModelInfo, error) {
+	var out struct {
+		Models []struct {
+			Name    string `json:"name"`
+			Size    int64  `json:"size"`
+			Details struct {
+				Family   string   `json:"family"`
+				Families []string `json:"families"`
+			} `json:"details"`
+		} `json:"models"`
+	}
+	if err := c.do(ctx, http.MethodGet, "/api/tags", nil, &out); err != nil {
+		return nil, err
+	}
+	models := []ModelInfo{}
+	for _, m := range out.Models {
+		fam := strings.ToLower(m.Details.Family + " " + strings.Join(m.Details.Families, " "))
+		if strings.Contains(m.Name, "embed") || strings.Contains(fam, "bert") {
+			continue
+		}
+		models = append(models, ModelInfo{Name: m.Name, Size: m.Size, Family: m.Details.Family})
+	}
+	return models, nil
+}
+
+// Message is one chat message.
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// Stream runs a chat and calls fn with each piece of the reply as it arrives.
+func (c *Client) Stream(ctx context.Context, model string, messages []Message, fn func(string) error) error {
+	body, err := json.Marshal(map[string]any{"model": model, "messages": messages, "stream": true})
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.Host+"/api/chat", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	// Replies can take minutes, so no client timeout; ctx ends it.
+	resp, err := (&http.Client{}).Do(req)
+	if err != nil {
+		return fmt.Errorf("ollama not reachable at %s: %w", c.Host, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		data, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<16))
+		var e struct {
+			Error string `json:"error"`
+		}
+		if json.Unmarshal(data, &e) == nil && e.Error != "" {
+			return fmt.Errorf("ollama: %s", e.Error)
+		}
+		return fmt.Errorf("ollama: %s", resp.Status)
+	}
+	dec := json.NewDecoder(resp.Body)
+	for {
+		var chunk struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+			Done  bool   `json:"done"`
+			Error string `json:"error"`
+		}
+		if err := dec.Decode(&chunk); err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return err
+		}
+		if chunk.Error != "" {
+			return fmt.Errorf("ollama: %s", chunk.Error)
+		}
+		if chunk.Message.Content != "" {
+			if err := fn(chunk.Message.Content); err != nil {
+				return err
+			}
+		}
+		if chunk.Done {
+			return nil
+		}
+	}
 }
 
 // Chat sends one system and one user message and returns the JSON reply.

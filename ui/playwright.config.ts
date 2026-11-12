@@ -34,7 +34,8 @@ export default defineConfig({
   webServer: {
     command: `npm run build && cd .. && go run ./cmd/woolly serve --addr 127.0.0.1:${port}`,
     url: `http://127.0.0.1:${port}/api/version`,
-    env: { WOOLLY_HOME: home, WOOLLY_NO_EMBED: '1' },
+    // No Ollama, so the chat shows its setup steps.
+    env: { WOOLLY_HOME: home, WOOLLY_NO_EMBED: '1', OLLAMA_HOST: '127.0.0.1:9' },
     reuseExistingServer: false,
     timeout: 180_000,
   },
