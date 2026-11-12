@@ -166,12 +166,6 @@ test('filters by project', async ({ page }) => {
   await expect(page.getByText(inProject)).toHaveCount(0);
 });
 
-test('chat explains how to set up Ollama', async ({ page }) => {
-  await page.getByRole('button', { name: 'Chat' }).click();
-  await expect(page.getByText('Chat runs on a model in Ollama')).toBeVisible();
-  await expect(page.getByText('ollama pull qwen2.5:3b')).toBeVisible();
-});
-
 test('opens a tab from the address', async ({ page }) => {
   await page.goto('/?view=activity');
   await expect(page.getByRole('button', { name: 'Activity' })).toHaveAttribute('aria-current', 'page');

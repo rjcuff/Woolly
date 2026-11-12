@@ -67,6 +67,13 @@ curl -X POST localhost:11435/api/recall \
 | `POST` | `/api/resolve` | `keep_id` |
 | `POST` | `/api/learn` | `text`, plus optional `project`, `dry_run`. Needs Ollama. See [Smart memory](/docs/learn) |
 | `GET` | `/api/activity` | Add `?app=cursor` for one app, `?limit=50` for fewer |
+| `GET` | `/api/apps` | Every app Woolly supports, and whether it's connected |
+| `POST` | `/api/apps/{id}/connect` | Connect an app, like `cursor`. `/disconnect` removes it |
+| `GET` | `/api/settings` | Version, Ollama status and sync status |
+| `POST` | `/api/sync/init` | Turn on sync and get a join code |
+| `POST` | `/api/sync/join` | `addr`, `code` |
+| `POST` | `/api/sync/now` | Sync with linked devices now |
+| `POST` | `/api/sync/leave` | Turn sync off on this device |
 | `GET` | `/api/version` | |
 
 ## Name your app

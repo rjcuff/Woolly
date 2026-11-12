@@ -1,0 +1,7 @@
+App logos used to show which apps Woolly works with. Each logo is a
+trademark of its owner.
+
+- Claude, Claude Code, Codex, Cursor, Windsurf, Gemini CLI, LM Studio, Ollama,
+  opencode: Lobe Icons (github.com/lobehub/lobe-icons), MIT license.
+- VS Code: Devicon (github.com/devicons/devicon), MIT license.
+- Python: Simple Icons (simpleicons.org), CC0.

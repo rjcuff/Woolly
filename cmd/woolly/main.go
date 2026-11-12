@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/rjcuff/woolly/internal/activity"
@@ -174,6 +175,9 @@ type app struct {
 	engine *recall.Engine
 	ollama *ollama.Client
 	log    *activity.Log
+
+	syncMu   sync.Mutex
+	syncStop func()
 }
 
 var importName = map[string]string{"chatgpt": "ChatGPT import", "claude": "Claude import"}
@@ -621,7 +625,7 @@ func cmdServe(args []string) error {
 	go func() {
 		errc <- server.ServeListener(ln, server.Handler(a.store, a.engine, version, token, a.serverOptions()))
 	}()
-	if _, err := startSync(a, true); err != nil {
+	if err := a.ensureSync(); err != nil {
 		fmt.Fprintln(os.Stderr, "woolly: sync is off:", err)
 	}
 	if *withProxy {
@@ -650,7 +654,7 @@ func cmdUI(args []string) error {
 	if err != nil {
 		return err
 	}
-	link := url + "auth?token=" + token
+	link := url + "auth?token=" + token + "&view=app"
 	client := &http.Client{Timeout: time.Second}
 	if res, err := client.Get(url + "api/version"); err == nil {
 		res.Body.Close()

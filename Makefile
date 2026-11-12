@@ -1,7 +1,7 @@
 VERSION ?= 0.1.0-dev
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: build test install ui web-test ui-test py-test check release publish demo pypi
+.PHONY: build test install ui web-test ui-test py-test check release publish demo pypi app
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/woolly ./cmd/woolly
@@ -47,3 +47,7 @@ demo: build
 # sdk/python/pyproject.toml and sdk/python/woolly/__init__.py first.
 pypi: py-test
 	cd sdk/python && rm -rf dist && python3 -m build && python3 -m twine upload dist/*
+
+# Builds the desktop app for this computer. Needs Rust (rustup.rs).
+app:
+	scripts/app.sh $(VERSION)

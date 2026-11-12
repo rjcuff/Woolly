@@ -9,13 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rjcuff/woolly/internal/chats"
 	"github.com/rjcuff/woolly/internal/learn"
 	"github.com/rjcuff/woolly/internal/server"
 )
 
 func (a *app) serverOptions() server.Options {
-	return server.Options{Activity: a.log, Learner: a.learner(), Ollama: a.ollama, Chats: chats.Open(a.home)}
+	return server.Options{
+		Activity: a.log, Learner: a.learner(), Ollama: a.ollama,
+		Home: a.home, StartSync: func() error { return a.ensureSync() },
+	}
 }
 
 func (a *app) learner() *learn.Learner {

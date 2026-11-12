@@ -52,7 +52,7 @@ Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm http
 
 **Keeps projects apart.** Notes about a codebase stay with that repo, and facts about you go everywhere. Your AI in one project never gets another project's notes.
 
-**Shows you everything.** `woolly ui` opens a page where you can search, edit and delete every memory. Or open the files yourself. Every memory notes which app saved it, and `woolly log` shows what each app saved, read and deleted.
+**Shows you everything.** `woolly ui` opens the Woolly app: what your AI tools know, one-click app connections, and every memory to search, edit or forget. Or open the files yourself. Every memory notes which app saved it, and `woolly log` shows what each app saved, read and deleted.
 
 **Brings in your history.** `woolly import` pulls facts about you out of your ChatGPT and Claude exports.
 
@@ -90,7 +90,7 @@ See [Python](https://usewoolly.com/docs/python).
 woolly remember "Moved to Denver" --key user.location   # a newer fact with the same key replaces the old one
 woolly recall "where do I live"
 woolly profile          # a summary of what Woolly knows about you
-woolly ui               # review and edit memories in your browser
+woolly ui               # open the Woolly app
 woolly log              # what each app saved, read and deleted
 woolly learn "I just moved to Denver"   # a local model picks out the facts
 woolly sync init        # keep your devices in step
@@ -127,7 +127,8 @@ No. Woolly works on its own. If Ollama is running, Woolly also uses it to search
 | --- | --- |
 | `cmd/woolly`, `internal` | The Woolly program, written in Go |
 | `docs` | Documentation in MDX |
-| `ui` | The review page, built into the binary |
+| `ui` | The Woolly app's screens, built into the binary |
+| `app` | The Mac app (Tauri), which wraps the same screens |
 | `sdk/python` | The `woolly-ai` Python package |
 | `web` | Website and docs site |
 | `scripts` | Install, release and Homebrew scripts |

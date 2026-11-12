@@ -1,0 +1,23 @@
+[package]
+name = "woolly-app"
+version = "0.10.0"
+description = "Woolly: local memory for your AI tools"
+edition = "2021"
+license = "MIT"
+
+[[bin]]
+name = "woolly-app"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

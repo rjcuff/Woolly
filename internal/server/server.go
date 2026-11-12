@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/rjcuff/woolly/internal/activity"
-	"github.com/rjcuff/woolly/internal/chats"
 	"github.com/rjcuff/woolly/internal/learn"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/ollama"
@@ -48,7 +47,10 @@ type Options struct {
 	Activity *activity.Log
 	Learner  *learn.Learner
 	Ollama   *ollama.Client
-	Chats    *chats.Store
+	// Home is Woolly's folder. Setting it turns on the Apps and Settings API.
+	Home string
+	// StartSync starts listening for other devices after sync is set up.
+	StartSync func() error
 }
 
 // Handler returns the HTTP handler for the Woolly API. If log is set, saves,
@@ -314,7 +316,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string, 
 		writeJSON(w, http.StatusOK, map[string]any{"activity": entries})
 	})
 
-	registerChat(mux, store, engine, opts, record)
+	registerManage(mux, store, version, opts)
 
 	return LocalOnly(requireToken(token, mux))
 }

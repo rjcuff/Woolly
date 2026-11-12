@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The window only shows the local Woolly page. It gets no app permissions.",
+  "windows": ["main"],
+  "permissions": []
+}

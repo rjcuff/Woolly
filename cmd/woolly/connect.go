@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -19,27 +17,7 @@ const (
 	codexID      = "codex"
 )
 
-// woollyCommand is the command apps should run to start Woolly. It prefers the
-// path on PATH (like /opt/homebrew/bin/woolly), which survives upgrades,
-// over the versioned path the running binary may have been resolved to.
-func woollyCommand() (string, error) {
-	exe, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("finding the woolly binary: %w", err)
-	}
-	if onPath, err := exec.LookPath("woolly"); err == nil {
-		if abs, err := filepath.Abs(onPath); err == nil && sameFile(abs, exe) {
-			return abs, nil
-		}
-	}
-	return exe, nil
-}
-
-func sameFile(a, b string) bool {
-	sa, err1 := os.Stat(a)
-	sb, err2 := os.Stat(b)
-	return err1 == nil && err2 == nil && os.SameFile(sa, sb)
-}
+func woollyCommand() (string, error) { return connect.WoollyCommand() }
 
 func cmdConnect(args []string) error {
 	fs := newFlags("connect")
@@ -176,46 +154,37 @@ func printRow(mark, name, msg string) {
 	fmt.Printf("  %s %-15s %s\n", mark, name, msg)
 }
 
-// claudeCode connects Claude Code through its own CLI, for every project,
-// and adds a startup hook so each session begins with what Woolly knows.
-// It reports whether it did anything.
+// claudeCode connects Claude Code and adds its startup hook. It reports
+// whether it did anything.
 func claudeCode(command string, remove, dryRun, explicit bool) bool {
-	const name = "Claude Code"
-	claude, err := exec.LookPath("claude")
-	if err != nil {
+	if !cliApp(connect.ClaudeCode, command, remove, dryRun, explicit) {
+		return false
+	}
+	startupHook(command, remove, dryRun)
+	return true
+}
+
+func cliApp(c connect.CLIApp, command string, remove, dryRun, explicit bool) bool {
+	if !c.Installed() {
 		if explicit {
-			printRow("!", name, "the claude command isn't installed")
+			printRow("!", c.Name, "the "+c.Bin+" command isn't installed")
 		} else {
-			printRow("-", name, "not found")
+			printRow("-", c.Name, "not found")
 		}
 		return false
 	}
-	connected := exec.Command(claude, "mcp", "get", connect.ServerName).Run() == nil
-	res := connect.Unchanged
-	switch {
-	case remove && !connected:
-		res = connect.Absent
-	case !remove && connected:
-	case dryRun && remove:
-		res = connect.Removed
-	case dryRun:
-		res = connect.Added
-	default:
-		var cmd *exec.Cmd
-		if remove {
-			cmd = exec.Command(claude, "mcp", "remove", connect.ServerName, "--scope", "user")
-			res = connect.Removed
-		} else {
-			cmd = exec.Command(claude, "mcp", "add", "--scope", "user", connect.ServerName, "--", command, "mcp")
-			res = connect.Added
-		}
-		if out, err := cmd.CombinedOutput(); err != nil {
-			printRow("!", name, fmt.Sprintf("claude mcp failed: %s", strings.TrimSpace(string(out))))
-			return false
-		}
+	var res connect.Result
+	var err error
+	if remove {
+		res, err = c.Disconnect(dryRun)
+	} else {
+		res, err = c.Connect(command, dryRun)
 	}
-	printRow("✓", name, describe(res, dryRun))
-	startupHook(command, remove, dryRun)
+	if err != nil {
+		printRow("!", c.Name, err.Error())
+		return false
+	}
+	printRow("✓", c.Name, describe(res, dryRun))
 	return true
 }
 
@@ -254,77 +223,8 @@ func startupHook(command string, remove, dryRun bool) {
 	}
 }
 
-// codex connects the Codex CLI through `codex mcp add`. Codex keeps servers
-// in ~/.codex/config.toml (or $CODEX_HOME), which is read to see whether
-// Woolly is already there.
 func codex(command string, remove, dryRun, explicit bool) bool {
-	const name = "Codex"
-	bin, err := exec.LookPath("codex")
-	if err != nil {
-		if explicit {
-			printRow("!", name, "the codex command isn't installed")
-		} else {
-			printRow("-", name, "not found")
-		}
-		return false
-	}
-	connected := codexHasWoolly()
-	switch {
-	case remove && !connected:
-		printRow("✓", name, connect.Absent.String())
-		return true
-	case !remove && connected:
-		printRow("✓", name, connect.Unchanged.String())
-		return true
-	case dryRun && remove:
-		printRow("✓", name, describe(connect.Removed, true))
-		return true
-	case dryRun:
-		printRow("✓", name, describe(connect.Added, true))
-		return true
-	}
-	var cmd *exec.Cmd
-	if remove {
-		cmd = exec.Command(bin, "mcp", "remove", connect.ServerName)
-	} else {
-		cmd = exec.Command(bin, "mcp", "add", connect.ServerName, "--", command, "mcp")
-	}
-	if out, err := cmd.CombinedOutput(); err != nil {
-		msg := fmt.Sprintf("codex mcp failed: %s", strings.TrimSpace(string(out)))
-		if remove {
-			msg += fmt.Sprintf(". Remove the [mcp_servers.%s] section from %s by hand", connect.ServerName, codexConfig())
-		}
-		printRow("!", name, msg)
-		return false
-	}
-	if remove {
-		printRow("✓", name, connect.Removed.String())
-	} else {
-		printRow("✓", name, connect.Added.String())
-	}
-	return true
-}
-
-func codexConfig() string {
-	if dir := os.Getenv("CODEX_HOME"); dir != "" {
-		return filepath.Join(dir, "config.toml")
-	}
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".codex", "config.toml")
-}
-
-func codexHasWoolly() bool {
-	data, err := os.ReadFile(codexConfig())
-	if err != nil {
-		return false
-	}
-	for _, line := range strings.Split(string(data), "\n") {
-		l := strings.ReplaceAll(strings.TrimSpace(line), " ", "")
-		if l == "[mcp_servers."+connect.ServerName+"]" || l == `[mcp_servers."`+connect.ServerName+`"]` {
-			return true
-		}
-	}
-	return false
+	return cliApp(connect.Codex, command, remove, dryRun, explicit)
 }
 
 // connectedApps lists the installed apps that have Woolly, for woolly doctor.

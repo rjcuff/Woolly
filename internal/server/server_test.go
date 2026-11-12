@@ -139,3 +139,16 @@ func TestProjectsOverTheAPI(t *testing.T) {
 		t.Fatalf("list: %s", rec.Body)
 	}
 }
+
+func TestAuthOpensATab(t *testing.T) {
+	h, token := setup(t)
+	if loc := do(h, "GET", "/auth?token="+token+"&view=app", "", nil).Header().Get("Location"); loc != "/app" {
+		t.Fatalf("location %q", loc)
+	}
+	if loc := do(h, "GET", "/auth?token="+token+"&view=activity", "", nil).Header().Get("Location"); loc != "/?view=activity" {
+		t.Fatalf("location %q", loc)
+	}
+	if loc := do(h, "GET", "/auth?token="+token+"&view=//evil.com", "", nil).Header().Get("Location"); loc != "/" {
+		t.Fatalf("bad view should be ignored: %q", loc)
+	}
+}

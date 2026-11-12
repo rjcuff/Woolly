@@ -85,6 +85,14 @@ func (c *Config) Save(home string) error {
 	return os.Rename(tmp, path)
 }
 
+// Remove turns sync off on this device.
+func Remove(home string) error {
+	if err := os.Remove(ConfigPath(home)); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return nil
+}
+
 // NewConfig creates a config with a new random key.
 func NewConfig() (*Config, error) {
 	k := make([]byte, 32)

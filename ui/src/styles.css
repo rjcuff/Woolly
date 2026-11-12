@@ -63,6 +63,8 @@ button, input, textarea { font: inherit; color: inherit; }
   margin-bottom: 28px;
 }
 .wordmark {
+  color: inherit;
+  text-decoration: none;
   font-family: 'Shrikhand', Georgia, serif;
   font-size: 32px;
   line-height: 1;
@@ -228,62 +230,3 @@ button.link:hover { color: var(--fg); }
 
 .notice .undo { color: inherit; font-weight: 600; margin-left: auto; }
 .trash-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-
-/* Chat */
-.chat { display: flex; flex-direction: column; gap: 12px; }
-.chat-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.chat-bar select {
-  font: inherit;
-  font-size: 14px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--fg);
-  max-width: 100%;
-}
-.chat-bar select { flex: 1 1 160px; min-width: 0; }
-.chat-bar select[aria-label="Model"] { flex: 0 1 auto; margin-left: auto; }
-.turns { display: flex; flex-direction: column; gap: 14px; min-height: 40vh; }
-.chat-hint { padding: 24px 0; }
-.turn { display: flex; flex-direction: column; gap: 6px; }
-.turn.user { align-items: flex-end; }
-.bubble {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  padding: 10px 14px;
-  border-radius: 14px;
-  max-width: min(100%, 620px);
-}
-.turn.user .bubble { background: var(--accent); color: var(--accent-fg); }
-.turn.assistant .bubble { background: var(--panel); border: 1px solid var(--line); }
-.used { font-size: 13px; color: var(--muted); }
-.used summary { cursor: pointer; }
-.used ul { margin: 6px 0 0; padding-left: 18px; }
-.saved { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ok); }
-.composer {
-  position: sticky;
-  bottom: 12px;
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 8px;
-}
-.composer textarea {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  resize: none;
-  outline: none;
-  padding: 6px 8px;
-  field-sizing: content;
-  max-height: 40vh;
-}
-.learn-toggle { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); align-self: flex-start; }
-.learn-toggle input { width: auto; margin: 0; padding: 0; accent-color: var(--fg); }
-.chat-empty { padding: 24px 0; }
-.chat-empty code { font-family: var(--mono); font-size: 14px; }

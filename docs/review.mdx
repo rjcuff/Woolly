@@ -1,25 +1,33 @@
 ---
-title: Review page
-description: Browse, edit and clean up your memories in your browser.
+title: The Woolly app
+description: See what your AI tools know, connect apps, and edit your memories.
 ---
 
 ```sh
 woolly ui
 ```
 
-This opens a page on your own computer at `http://127.0.0.1:11435`. Nothing on it is loaded from the internet.
+This opens Woolly on your own computer at `http://127.0.0.1:11435`. Nothing on it is loaded from the internet. A Mac app with the same screens is in preview.
 
-## What you can do
+## Home
 
-- **Memories:** add, search, edit and forget memories.
-- **Conflicts:** when an AI saved something that disagrees with what you said, pick the one that's right.
-- **History:** see older facts that were replaced, and bring one back with **Make current**.
-- **Trash:** forgotten memories go here. Restore them, or empty the trash to delete them for good. Right after you forget something, an **Undo** button appears.
-- **Activity:** what each app saved, read and deleted, newest first. Pick an app to see only what it did.
-- **Profile:** a summary of what Woolly knows about you, ready to copy into any AI's custom instructions.
+How many memories you have, how many your apps saved each day, which apps are connected, and anything that needs review. Below that, the latest memories and which apps used Woolly most this week.
 
-Each memory shows which app saved it, like "via Cursor" or "via command line", and its project if it has one. Pick a project next to the search box to see only its memories, or **About you** for the rest. To move a memory to another project, or make it apply everywhere, edit it and change its project.
+## Memories
 
-If `woolly serve` is already running, `woolly ui` opens the page without starting a second server.
+Add a memory, search, and filter by project. Click a memory to edit it, and forget it with the trash button. Each memory shows the app that saved it.
 
-The page needs a secret token to read your memories, and `woolly ui` passes it along for you. If you open the address directly, the page will ask you to use `woolly ui` instead.
+## Apps
+
+Every app Woolly supports, with Connect and Disconnect buttons. It does the same thing as `woolly connect`.
+
+## Settings
+
+Ollama status, sync between your devices, and where your memories are stored. From here you can open:
+
+- **Conflicts:** something an app saved disagrees with what you said. Keep yours or use the new one.
+- **History:** older versions of facts that changed. Make one current again.
+- **Trash:** forgotten memories. Restore them, or empty the trash.
+- **Activity:** what each app saved, read and forgot.
+
+The page needs a secret token, and `woolly ui` passes it along for you. If you open the address directly, it asks you to use `woolly ui` instead.

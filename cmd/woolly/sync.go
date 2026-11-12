@@ -240,6 +240,18 @@ func syncServe() error {
 	select {}
 }
 
+// ensureSync starts the sync listener once, if sync is set up.
+func (a *app) ensureSync() error {
+	a.syncMu.Lock()
+	defer a.syncMu.Unlock()
+	if a.syncStop != nil {
+		return nil
+	}
+	stop, err := startSync(a, false)
+	a.syncStop = stop
+	return err
+}
+
 // startSync listens for other devices and syncs every 5 minutes. It returns
 // nil when sync isn't set up.
 func startSync(a *app, verbose bool) (func(), error) {

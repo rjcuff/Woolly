@@ -60,6 +60,7 @@ Reply with JSON only: {"facts":[{"fact":"Lives in Denver","project":false}]}
 
 - Keep lasting facts about the user: where they live, their work, family, pets, health needs like allergies, preferences, plans, decisions, how they work, tools they use or switched to, and details about their projects, including changes like upgrades or moves.
 - A message can mix a question with a fact. Keep the fact and ignore the question.
+- A question states nothing. "Where do I live?" is not a fact about where they live.
 - Skip one-time plans for today or this week.
 - Write each fact as one short sentence, like "Lives in Denver" or "Prefers tabs over spaces".
 - project: true only for facts about the current codebase itself: its stack, commands, setup and conventions. Facts about the person (where they live, their job, the tools they use, what they like) are never project facts.
@@ -113,6 +114,10 @@ func (l *Learner) Learn(ctx context.Context, text string, o Options) ([]Step, er
 	}
 	if len(text) > maxText {
 		text = text[len(text)-maxText:]
+	}
+	// Small models read "where do I live?" as a fact, so questions alone teach nothing.
+	if onlyQuestions(text) {
+		return nil, nil
 	}
 	// The model can be talked into saving what an attack tells it to, so
 	// text that reads like instructions to an AI teaches nothing.
@@ -317,6 +322,51 @@ func overlap(a, b string) bool {
 
 func notWord(r rune) bool {
 	return !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9')
+}
+
+// onlyQuestions reports whether every sentence the user wrote is a question.
+func onlyQuestions(text string) bool {
+	var user []string
+	for _, line := range strings.Split(text, "\n") {
+		l := strings.TrimSpace(line)
+		lower := strings.ToLower(l)
+		if strings.HasPrefix(lower, "assistant:") {
+			continue
+		}
+		user = append(user, strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(l, "user:"), "User:")))
+	}
+	sentences := strings.FieldsFunc(strings.Join(user, " "), func(r rune) bool { return r == '.' || r == '!' || r == ',' || r == ';' || r == '\n' })
+	asked := false
+	for _, s := range sentences {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		for _, part := range strings.SplitAfter(s, "?") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			if !strings.HasSuffix(part, "?") && !looksLikeQuestion(part) {
+				return false
+			}
+			asked = true
+		}
+	}
+	return asked
+}
+
+var questionWords = []string{"what", "where", "when", "who", "why", "how", "which", "do ", "does ", "did ", "is ", "are ", "can ", "could ", "would ", "should ", "will "}
+
+// looksLikeQuestion catches questions typed without a question mark.
+func looksLikeQuestion(s string) bool {
+	l := strings.ToLower(s)
+	for _, w := range questionWords {
+		if strings.HasPrefix(l, w) {
+			return true
+		}
+	}
+	return false
 }
 
 func norm(s string) string {

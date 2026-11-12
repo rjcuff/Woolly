@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -61,6 +62,8 @@ func requireToken(token string, next http.Handler) http.Handler {
 
 // authHandler trades the token in the link `woolly ui` opens for a cookie,
 // so the token doesn't stay in the address bar.
+var viewName = regexp.MustCompile(`^[a-z]{1,20}$`)
+
 func authHandler(token string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		got := r.URL.Query().Get("token")
@@ -75,6 +78,13 @@ func authHandler(token string) http.HandlerFunc {
 			HttpOnly: true,
 			SameSite: http.SameSiteStrictMode,
 		})
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		dest := "/"
+		switch v := r.URL.Query().Get("view"); {
+		case v == "app":
+			dest = "/app"
+		case viewName.MatchString(v):
+			dest += "?view=" + v
+		}
+		http.Redirect(w, r, dest, http.StatusSeeOther)
 	}
 }

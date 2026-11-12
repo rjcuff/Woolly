@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- The Woolly app. `woolly ui` opens a new app with Home (your memories at a glance, with a chart of what apps saved each day), Memories (add, search, edit in place, forget), Apps (connect Claude, Cursor, VS Code and more with one click) and Settings (Ollama, sync, conflicts, history, trash and activity).
+- A Mac app in preview wraps the same screens, with a menu bar icon. Build it with `make app`.
+- `woolly learn` no longer saves anything from a message that only asks questions.
+- New API endpoints for the app: `GET /api/apps`, `POST /api/apps/{id}/connect` and `/disconnect`, `GET /api/settings`, and `POST /api/sync/init`, `/join`, `/now`, `/leave`.
+
 ## 0.9.0
 
 - Smart memory. `woolly learn` uses a model running in Ollama to pick out facts from a conversation or any text. A fact on the same subject as an older one replaces it, like a new city or a new editor, and repeats are skipped. Facts are saved as things an AI figured out, so they never overrule what you said yourself, and secrets and instructions are still refused. Also in the API (`POST /api/learn`) and Python (`w.learn(...)`). The default model is `qwen2.5:3b`; set `WOOLLY_LLM_MODEL` to change it. See [Smart memory](https://usewoolly.com/docs/learn).
