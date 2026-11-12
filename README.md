@@ -30,6 +30,8 @@ woolly connect
 
 `woolly connect` adds Woolly to Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Codex, Gemini CLI, LM Studio and opencode. Now they all remember.
 
+Want an app? The Woolly Mac app (preview) is on the [latest release](https://github.com/rjcuff/woolly/releases/latest) as `Woolly-mac.dmg`. It isn't signed yet: the first time, open System Settings → Privacy & Security and choose Open Anyway.
+
 Using Claude Desktop? Download [woolly.mcpb](https://github.com/rjcuff/woolly/releases/latest/download/woolly.mcpb) and double-click it.
 
 Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm https://usewoolly.com/install.ps1 | iex`, or `go install github.com/rjcuff/woolly/cmd/woolly@latest`.

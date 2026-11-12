@@ -1,9 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.10.0
 
 - The Woolly app. `woolly ui` opens a new app with Home (your memories at a glance, with a chart of what apps saved each day), Memories (add, search, edit in place, forget), Apps (connect Claude, Cursor, VS Code and more with one click) and Settings (Ollama, sync, conflicts, history, trash and activity).
-- A Mac app in preview wraps the same screens, with a menu bar icon. Build it with `make app`.
+- A Mac app in preview wraps the same screens, with a menu bar icon. Download `Woolly-mac.dmg` from the release. It isn't signed yet, so the first time you open it, go to System Settings → Privacy & Security and choose Open Anyway.
 - `woolly learn` no longer saves anything from a message that only asks questions.
 - New API endpoints for the app: `GET /api/apps`, `POST /api/apps/{id}/connect` and `/disconnect`, `GET /api/settings`, and `POST /api/sync/init`, `/join`, `/now`, `/leave`.
 

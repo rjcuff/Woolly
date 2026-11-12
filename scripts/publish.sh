@@ -38,6 +38,7 @@ for f in dist/*; do
   name=$(basename "$f")
   case "$name" in
     *.zip | *.mcpb) type=application/zip ;;
+    *.dmg) type=application/x-apple-diskimage ;;
     *.txt) type=text/plain ;;
     *) type=application/gzip ;;
   esac
