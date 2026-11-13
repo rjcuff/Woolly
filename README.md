@@ -108,6 +108,10 @@ system_prompt = "You are a helpful assistant.\n\n" + woolly.context(user_message
 
 See [Python](https://usewoolly.com/docs/python).
 
+## Benchmark
+
+On a sample of [LOCOMO](https://github.com/snap-research/locomo), Woolly's search found the message with the answer for 87% of questions, with a median recall of 23 ms, all on a laptop with Ollama. Run it yourself with `python3 bench/locomo/run.py`. See [bench/locomo](bench/locomo).
+
 ## Commands
 
 ```sh

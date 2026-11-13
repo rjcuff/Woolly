@@ -3,6 +3,7 @@
 ## Unreleased
 
 - JavaScript and TypeScript package: `npm install woolly-ai`. Save, recall, learn and add memory to prompts from Node apps, plus `woollyMemory()` middleware for the Vercel AI SDK that adds the user's relevant memories to every call. See [JavaScript](https://usewoolly.com/docs/javascript).
+- A LOCOMO benchmark you can run on your own computer with Ollama: `python3 bench/locomo/run.py`. It reports answer accuracy and, separately, how often Woolly's search found the message with the answer. See [Benchmark](https://usewoolly.com/docs/benchmark).
 
 ## 0.12.0
 

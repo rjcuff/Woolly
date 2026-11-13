@@ -16,6 +16,7 @@
     "security",
     "ollama",
     "import",
+    "benchmark",
     "---Build with Woolly---",
     "python",
     "javascript",

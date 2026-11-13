@@ -22,7 +22,9 @@ Set `WOOLLY_HOME` to a temporary folder when testing so you never touch real mem
 - `internal/`: memory store, search, MCP server, local API, proxy, app connections
 - `ui/`: the review page, built into the binary with `make ui`
 - `web/`: the website and docs at usewoolly.com, from `docs/*.mdx`
-- `sdk/python`: the `woolly-ai` package
+- `sdk/python`: the `woolly-ai` Python package
+- `sdk/js`: the `woolly-ai` npm package
+- `bench/locomo`: the LOCOMO benchmark
 
 ## Rules
 

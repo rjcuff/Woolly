@@ -1,0 +1,29 @@
+---
+title: Benchmark
+description: Measure how well Woolly remembers long conversations with LOCOMO, on your own computer.
+---
+
+Woolly comes with a [LOCOMO](https://github.com/snap-research/locomo) benchmark, the test of long conversation memory that mem0 and others report. It runs on your computer with Ollama, so you can check the numbers yourself.
+
+```sh
+make build
+ollama pull qwen2.5:7b
+ollama pull nomic-embed-text
+python3 bench/locomo/run.py --conversations 1 --questions 30
+```
+
+It saves every message of each conversation into a fresh Woolly, then for each question asks Woolly for the 20 closest memories, has a local model answer from them, and has a local model grade the answer.
+
+## First results
+
+On the first 30 questions of conversation 1, with `qwen2.5:7b`:
+
+| | Score |
+|---|---|
+| Overall | 56.7% |
+| Woolly found the message with the answer | 86.7% |
+| Median recall time | 23 ms |
+
+Retrieval is Woolly's part. Accuracy also depends on the answer model, and a 7B model on a laptop misses more dates and multi-step questions than the hosted models most published numbers use, so these aren't directly comparable to mem0's.
+
+The dataset is CC BY-NC 4.0, so the script downloads it instead of including it. See [bench/locomo](https://github.com/rjcuff/woolly/tree/main/bench/locomo) for every option.
