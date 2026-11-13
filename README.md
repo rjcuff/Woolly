@@ -52,6 +52,10 @@ Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm http
 
 **Syncs your devices.** `woolly sync` keeps your laptop, desktop and Raspberry Pi in step over your own network. Encrypted, no cloud, no account.
 
+**Picks up where you left off.** When Claude Code compacts or a session ends, Woolly saves what you were doing, what was decided and what's next. The next session starts there, in any app.
+
+**Shares project memory with your team.** `woolly share` keeps a repo's project notes in `.woolly/` so everyone's agents start with the same context. Commit it like any other file. No cloud.
+
 **Keeps projects apart.** Notes about a codebase stay with that repo, and facts about you go everywhere. Your AI in one project never gets another project's notes.
 
 **Shows you everything.** `woolly ui` opens the Woolly app: what your AI tools know, one-click app connections, and every memory to search, edit or forget. Or open the files yourself. Every memory notes which app saved it, and `woolly log` shows what each app saved, read and deleted.
@@ -94,6 +98,8 @@ woolly recall "where do I live"
 woolly profile          # a summary of what Woolly knows about you
 woolly ui               # open the Woolly app
 woolly log              # what each app saved, read and deleted
+woolly handoff          # where you left off in this project
+woolly share            # share this repo's project memories with your team
 woolly learn "I just moved to Denver"   # a local model picks out the facts
 woolly sync init        # keep your devices in step
 woolly import chatgpt ~/Downloads/export.zip --dry-run

@@ -34,6 +34,7 @@ import (
 	"github.com/rjcuff/woolly/internal/proxy"
 	"github.com/rjcuff/woolly/internal/recall"
 	"github.com/rjcuff/woolly/internal/server"
+	"github.com/rjcuff/woolly/internal/share"
 )
 
 var version = "0.1.0-dev"
@@ -65,6 +66,8 @@ Usage:
   woolly conflicts
   woolly log [--app name] [-n 50]  what each app saved, read and deleted
   woolly context               print what Woolly knows, for an app to read at startup
+  woolly handoff               where you left off in this project
+  woolly share [--agents-md]   share this repo's project memories with your team
   woolly resolve <id>          keep this memory as the current fact for its key
   woolly ui                    open the review page in your browser
   woolly connect [app...]      add Woolly to Claude, Cursor, VS Code, Codex, Gemini and more
@@ -133,6 +136,10 @@ func run(args []string) error {
 		return cmdLog(rest)
 	case "context":
 		return cmdContext(rest)
+	case "handoff":
+		return cmdHandoff(rest)
+	case "share":
+		return cmdShare(rest)
 	case "resolve":
 		return cmdResolve(rest)
 	case "ui":
@@ -270,6 +277,11 @@ func cmdRemember(args []string) error {
 		return err
 	}
 	a.record("remember", []string{res.Memory.ID}, 0)
+	if res.Memory.Project != "" {
+		if cwd, err := os.Getwd(); err == nil {
+			a.syncRepo(cwd)
+		}
+	}
 	if *asJSON {
 		return printJSON(res)
 	}
@@ -785,6 +797,12 @@ func cmdMCP(args []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 	s := &mcp.Server{Store: a.store, Engine: a.engine, Version: version, Activity: a.log, Project: mcpProject()}
+	if cwd, err := os.Getwd(); err == nil {
+		if r := share.Find(cwd); r != nil && r.Enabled() {
+			s.Repo = r
+			_, _ = r.Sync(a.store)
+		}
+	}
 	return s.Serve(ctx, os.Stdin, os.Stdout)
 }
 

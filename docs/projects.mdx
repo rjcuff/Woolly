@@ -37,6 +37,19 @@ woolly list --project acme
 woolly recall "how do we deploy" --project acme
 ```
 
+## Share with your team
+
+```sh
+woolly share
+```
+
+Run it inside a repo, then commit the new `.woolly/` folder. It holds the project's memories as plain files. When a teammate with Woolly works in the repo, their AI tools start with the same notes, and new project notes they save land in the folder too. No cloud, no account.
+
+- Only notes about this project are written to the repo. Facts about you and handoff notes never are.
+- Notes from a repo are checked like anything an app saves: passwords, keys and text that reads like instructions to an AI are skipped.
+- `woolly share --agents-md` also keeps a short Project notes section in `AGENTS.md`, so tools that read it without MCP, like Codex and Copilot, get the notes too.
+- `woolly share --stop` removes `.woolly/` and the `AGENTS.md` section. Memories on your computer stay.
+
 ## Set the project yourself
 
 Set `WOOLLY_PROJECT` to use a different name than the repo's, or to give a folder that isn't a git repo a project.

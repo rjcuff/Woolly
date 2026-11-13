@@ -14,9 +14,11 @@ import (
 	"sync"
 
 	"github.com/rjcuff/woolly/internal/activity"
+	"github.com/rjcuff/woolly/internal/handoff"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/profile"
 	"github.com/rjcuff/woolly/internal/recall"
+	"github.com/rjcuff/woolly/internal/share"
 )
 
 var supportedVersions = []string{"2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"}
@@ -29,7 +31,8 @@ Never save passwords, API keys or other secrets. Woolly will refuse them.
 Use a stable "key" (e.g. "user.location", "project.acme.database") for facts that can change, so newer facts replace older ones.
 Set source to "user" only when the user said it directly; use "agent" for things you inferred.
 Facts about the user (name, preferences, how they like to work) apply everywhere: leave "project" empty.
-Facts that only matter in one codebase (its stack, commands, decisions) belong to that project: set "project".`
+Facts that only matter in one codebase (its stack, commands, decisions) belong to that project: set "project".
+When you finish a piece of work or the user is wrapping up, call "handoff" with what you were working on, what got done, what was decided and what's next, so the next session in any app can pick up.`
 
 // Server is an MCP server backed by a Woolly store.
 type Server struct {
@@ -38,6 +41,8 @@ type Server struct {
 	Version string
 	// Activity, if set, records what the connected app does.
 	Activity *activity.Log
+	// Repo, if set, is a git repo that shares its project memories.
+	Repo *share.Repo
 	// Project is the project the app is working in, if Woolly can tell.
 	// Searches then cover the user's memories plus this project's, and
 	// leave other projects out.
@@ -205,6 +210,14 @@ var tools = []map[string]any{
 		}, "query"),
 	},
 	{
+		"name":        "handoff",
+		"title":       "Save handoff",
+		"description": "Save a short note on where this session left off: what you were working on, what got done, what was decided and what's next. The next session in any app starts with it. One per project; a new one replaces the last.",
+		"inputSchema": obj(map[string]any{
+			"note": map[string]any{"type": "string", "description": "A few short lines, like \"Working on: ...\\nDone: ...\\nNext: ...\"."},
+		}, "note"),
+	},
+	{
 		"name":        "get_profile",
 		"title":       "Get profile",
 		"description": "Get a short summary of everything currently known about the user: facts, preferences and notes. Good to call once at the start of a conversation.",
@@ -261,6 +274,9 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			return "", err
 		}
 		s.log("remember", []string{res.Memory.ID}, "", 0)
+		if res.Memory.Project != "" {
+			s.shareRepo()
+		}
 		return DescribeRemember(res), nil
 
 	case "recall":
@@ -302,7 +318,11 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			return "", err
 		}
 		s.log("profile", nil, "", len(mems))
-		out := notesHeader + profile.Build(mems).Markdown()
+		out := notesHeader
+		if h := handoff.Latest(s.Store, s.Project); h != nil {
+			out += "# Where you left off\n\n" + h.Content + "\n\n"
+		}
+		out += profile.Build(mems).Markdown()
 		if p := memory.NormalizeProject(s.Project); p != "" {
 			var lines []string
 			for _, m := range mems {
@@ -315,6 +335,21 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			}
 		}
 		return out, nil
+
+	case "handoff":
+		var a struct {
+			Note string `json:"note"`
+		}
+		_ = json.Unmarshal(raw, &a)
+		if strings.TrimSpace(a.Note) == "" {
+			return "", errors.New("note is empty")
+		}
+		m, err := handoff.Save(s.Store, s.Project, s.appName(), strings.TrimSpace(a.Note))
+		if err != nil {
+			return "", err
+		}
+		s.log("handoff", []string{m.ID}, "", 0)
+		return "Saved. The next session will start with this.", nil
 
 	case "list_memories":
 		var a struct {
@@ -352,6 +387,9 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			return "", err
 		}
 		s.log("forget", []string{m.ID}, "", 0)
+		if m.Project != "" {
+			s.shareRepo()
+		}
 		return "Moved to trash (the user can restore it): " + m.Content, nil
 
 	case "resolve_conflict":
@@ -374,6 +412,14 @@ func (s *Server) instructions() string {
 		return instructions + "\nThe current project is \"" + p + "\"."
 	}
 	return instructions
+}
+
+// shareRepo writes project notes to the shared repo after a change.
+func (s *Server) shareRepo() {
+	if s.Repo != nil && s.Repo.Enabled() {
+		_, _ = s.Repo.Sync(s.Store)
+		_, _ = s.Repo.WriteAgentsMD(s.Store, false)
+	}
 }
 
 func (s *Server) appName() string {

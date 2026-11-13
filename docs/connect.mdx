@@ -53,6 +53,19 @@ The hook is saved in `~/.claude/settings.json`, and `woolly disconnect` removes 
 
 If a config file has comments, Woolly won't rewrite it. It prints the lines to paste in yourself instead.
 
+## Pick up where you left off
+
+When Claude Code compacts a long conversation, or a session ends (including `/clear`), Woolly saves a short handoff note for the project: what you were working on, what got done, what was decided and what's next. The next session starts with it, in Claude Code or any other connected app.
+
+A quick note is saved right away. If Ollama is running with a chat model, Woolly then writes a better summary in the background. Only what you and the assistant wrote is read, never tool output.
+
+```sh
+woolly handoff          # show where you left off in this project
+woolly handoff --clear  # remove it
+```
+
+Other MCP apps can save a handoff too, with the `handoff` tool.
+
 ## Set it up by hand
 
 Prefer to edit the configs yourself, or using another MCP app? Here's what `woolly connect` adds.

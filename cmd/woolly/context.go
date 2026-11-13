@@ -1,15 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/rjcuff/woolly/internal/activity"
+	"github.com/rjcuff/woolly/internal/handoff"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/profile"
 )
@@ -37,6 +36,7 @@ func cmdContext(args []string) error {
 	if err != nil {
 		return nil
 	}
+	a.syncRepo(cwd)
 	mems, err := a.store.List(false)
 	if err != nil || len(mems) == 0 {
 		return nil
@@ -64,6 +64,13 @@ func buildContext(mems []memory.Memory, project string) (string, []string) {
 	var rest []memory.Memory
 	p := memory.NormalizeProject(project)
 	for _, m := range mems {
+		if m.Key == handoff.Key {
+			if m.Project == p && time.Since(m.UpdatedAt) < 14*24*time.Hour {
+				fmt.Fprintf(&b, "# Where you left off%s\n\n%s\n\n", from(m), strings.TrimSpace(m.Content))
+				ids = append(ids, m.ID)
+			}
+			continue
+		}
 		switch {
 		case p != "" && (m.Project == p || m.Project == "" && len(p) >= 3 && mentions(m, p)):
 			lines = append(lines, "- "+strings.TrimSpace(m.Content))
@@ -154,28 +161,7 @@ func mcpProject() string {
 }
 
 // hookCwd returns the folder from a Claude Code hook's stdin, if any.
-func hookCwd() string {
-	st, err := os.Stdin.Stat()
-	if err != nil || st.Mode()&os.ModeCharDevice != 0 {
-		return ""
-	}
-	done := make(chan []byte, 1)
-	go func() {
-		b, _ := io.ReadAll(io.LimitReader(os.Stdin, 1<<20))
-		done <- b
-	}()
-	select {
-	case b := <-done:
-		var in struct {
-			Cwd string `json:"cwd"`
-		}
-		if json.Unmarshal(b, &in) == nil {
-			return in.Cwd
-		}
-	case <-time.After(time.Second):
-	}
-	return ""
-}
+func hookCwd() string { return readHook().Cwd }
 
 var verbs = map[string]string{
 	"remember":    "saved",
@@ -189,6 +175,7 @@ var verbs = map[string]string{
 	"resolve":     "settled a conflict, keeping",
 	"empty_trash": "emptied the trash",
 	"import":      "imported",
+	"handoff":     "saved where you left off",
 	"sync":        "synced",
 	"learn":       "learned",
 }

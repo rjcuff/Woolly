@@ -233,3 +233,6 @@ func writeFile(path string, data []byte) error {
 	}
 	return nil
 }
+
+// ParseFile reads a memory file without saving it.
+func ParseFile(data []byte) (*Memory, error) { return decode(data) }

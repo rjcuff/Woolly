@@ -87,3 +87,34 @@ func TestStartupHookRefusesOddShapes(t *testing.T) {
 		t.Fatal("expected an error for a malformed hooks list")
 	}
 }
+
+func TestHandoffHooksAreAddedAndRemoved(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	if _, err := AddStartupHook(path, "/usr/local/bin/woolly", false); err != nil {
+		t.Fatal(err)
+	}
+	data, _ := os.ReadFile(path)
+	for _, want := range []string{`"PreCompact"`, `"SessionEnd"`, `woolly handoff --app claude-code`, `woolly context --app claude-code`} {
+		if !strings.Contains(string(data), want) {
+			t.Fatalf("missing %s in\n%s", want, data)
+		}
+	}
+	if res, _ := AddStartupHook(path, "/usr/local/bin/woolly", false); res != Unchanged {
+		t.Fatalf("second add: %v", res)
+	}
+	RemoveStartupHook(path, false)
+	if cfg := readJSON(t, path); len(cfg) != 0 {
+		t.Fatalf("all hooks should be gone: %v", cfg)
+	}
+}
+
+func TestOlderInstallGetsTheNewHooks(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	os.WriteFile(path, []byte(`{"hooks":{"SessionStart":[{"matcher":"startup|clear|compact","hooks":[{"type":"command","command":"/usr/local/bin/woolly context --app claude-code","timeout":10}]}]}}`), 0o600)
+	if res, _ := AddStartupHook(path, "/usr/local/bin/woolly", false); res != Added {
+		t.Fatalf("got %v", res)
+	}
+	if data, _ := os.ReadFile(path); strings.Count(string(data), "context --app") != 1 || !strings.Contains(string(data), "PreCompact") {
+		t.Fatalf("%s", data)
+	}
+}
