@@ -29,6 +29,8 @@ export async function loader() {
   return { stars: await getStars() };
 }
 
+const macDownload = 'https://github.com/rjcuff/woolly/releases/latest/download/Woolly-mac.dmg';
+
 export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex h-dvh flex-col overflow-hidden px-[max(20px,env(safe-area-inset-left))]">
@@ -43,12 +45,20 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             Woolly gives Claude, Cursor and your own tools one shared memory. It lives in plain
             files on your machine and never leaves your computer.
           </p>
-          <Link
-            to="/docs/quickstart"
-            className="mt-4 rounded-full bg-fd-foreground px-8 py-4 text-[18px] font-medium text-fd-background transition-opacity hover:opacity-85"
-          >
-            Get started
-          </Link>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Link
+              to="/docs/quickstart"
+              className="rounded-full bg-fd-foreground px-8 py-4 text-[18px] font-medium text-fd-background transition-opacity hover:opacity-85"
+            >
+              Get started
+            </Link>
+            <a
+              href={macDownload}
+              className="rounded-full px-6 py-4 text-[18px] font-medium shadow-[0_0_0_1px_var(--color-fd-border)] transition-colors hover:bg-fd-accent"
+            >
+              Download for Mac
+            </a>
+          </div>
 
           <div className="mt-12 w-full [@media(max-height:600px)]:hidden">
             <p className="text-[14px] text-fd-muted-foreground">Integrated with</p>

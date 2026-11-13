@@ -36,7 +36,11 @@ release: check
 	scripts/release.sh $(VERSION)
 
 # make publish VERSION=0.1.1  (tests, builds, tags, pushes and uploads the release)
+# On a Mac it also builds, signs and notarizes the Mac app and attaches it.
 publish: release
+	if [ "$$(uname -s)" = Darwin ]; then \
+		scripts/app.sh $(VERSION) && cp dist-app/Woolly-mac.dmg dist/ && (cd dist && shasum -a 256 Woolly-mac.dmg >> checksums.txt); \
+	fi
 	scripts/publish.sh $(VERSION)
 
 # Records docs/demo.gif from real woolly output.

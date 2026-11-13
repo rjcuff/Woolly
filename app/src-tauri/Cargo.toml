@@ -1,6 +1,6 @@
 [package]
 name = "woolly-app"
-version = "0.10.0"
+version = "0.11.0"
 description = "Woolly: local memory for your AI tools"
 edition = "2021"
 license = "MIT"

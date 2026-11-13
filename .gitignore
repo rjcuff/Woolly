@@ -13,3 +13,4 @@ ui/playwright-report/
 sdk/python/dist/
 __pycache__/
 *.egg-info/
+dist-app/

@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.11.0
+
+- The Mac app is signed and notarized by Apple, so it opens with a double-click. [Download it](https://github.com/rjcuff/woolly/releases/latest/download/Woolly-mac.dmg). One download works on Apple Silicon and Intel.
 
 - Pick up where you left off. When Claude Code compacts a conversation or a session ends, Woolly saves a handoff note for the project: what you were working on, what got done, what was decided and what's next. The next session starts with it, in Claude Code or any connected app. A quick note is saved instantly, then a local model writes a better one in the background when Ollama is running. `woolly handoff` shows it, and MCP apps can save one with the new `handoff` tool. Run `woolly connect claude-code` again to add the new hooks.
 - Share project memory with your team. `woolly share` keeps a repo's project notes in `.woolly/memories` as plain files to commit. Teammates' AI tools start with the same notes, and new notes are written back as they're saved. Only project notes are shared, never personal ones, and notes from a repo are checked for secrets and injected instructions. `--agents-md` also keeps a Project notes section in AGENTS.md for tools without MCP.
