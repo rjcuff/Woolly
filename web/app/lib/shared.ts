@@ -18,6 +18,10 @@ export const gitConfig = {
 export const githubUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
 export const blueskyUrl = 'https://bsky.app/profile/usewoolly.com';
 export const linkedinUrl = 'https://www.linkedin.com/company/usewoolly';
+export const productHuntUrl =
+  'https://www.producthunt.com/products/woolly?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-woolly';
+export const productHuntBadge = (theme: 'light' | 'dark') =>
+  `https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1315543&theme=${theme}`;
 
 const getContentUrl = createGetUrl(docsContentRoute);
 

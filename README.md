@@ -11,6 +11,8 @@ Ollama runs your models. Woolly remembers for them.
 [![npm](https://img.shields.io/npm/v/woolly-ai?color=111111&label=npm)](https://www.npmjs.com/package/woolly-ai)
 [![License: MIT](https://img.shields.io/badge/license-MIT-111111)](LICENSE)
 
+<a href="https://www.producthunt.com/products/woolly?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-woolly" target="_blank" rel="noopener noreferrer"><picture><source media="(prefers-color-scheme: dark)" srcset="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1315543&theme=dark"><img alt="Woolly - One local memory for all your AI tools | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1315543&theme=light"></picture></a>
+
 [Website](https://usewoolly.com) · [Docs](https://usewoolly.com/docs) · [Download for Mac](https://usewoolly.com/download) · [Bluesky](https://bsky.app/profile/usewoolly.com) · [LinkedIn](https://www.linkedin.com/company/usewoolly)
 
 ![Woolly saving notes for two projects, Claude Code loading only the acme notes at startup, and woolly log showing what each app did](docs/demo.gif)

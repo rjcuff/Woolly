@@ -4,7 +4,7 @@ import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { getStars } from '@/lib/github';
 import { integrations } from '@/lib/integrations';
 import { seo } from '@/lib/seo';
-import { appName, blueskyUrl, githubUrl, linkedinUrl, siteDescription, tagline } from '@/lib/shared';
+import { appName, blueskyUrl, githubUrl, linkedinUrl, productHuntBadge, productHuntUrl, siteDescription, tagline } from '@/lib/shared';
 
 export function meta(_: Route.MetaArgs) {
   return [
@@ -38,6 +38,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       <main className="flex flex-1 items-center justify-center pb-[6vh]">
         <section className="flex w-full max-w-[640px] flex-col items-start gap-6">
+          <a href={productHuntUrl} target="_blank" rel="noopener noreferrer" className="-mb-1 block transition-opacity hover:opacity-85">
+            <img
+              src={productHuntBadge('light')}
+              alt="Woolly - One local memory for all your AI tools | Product Hunt"
+              width={250}
+              height={54}
+              className="dark:hidden"
+            />
+            <img
+              src={productHuntBadge('dark')}
+              alt="Woolly - One local memory for all your AI tools | Product Hunt"
+              width={250}
+              height={54}
+              className="hidden dark:block"
+            />
+          </a>
           <h1 className="text-balance text-[26px] font-semibold leading-tight tracking-[-0.02em] sm:text-[30px]">
             Memory for your AI, kept on your laptop.
           </h1>
