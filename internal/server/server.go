@@ -317,6 +317,7 @@ func Handler(store *memory.Store, engine *recall.Engine, version, token string, 
 	})
 
 	registerManage(mux, store, version, opts)
+	registerImport(mux, store, log)
 
 	return LocalOnly(requireToken(token, mux))
 }

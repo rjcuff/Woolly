@@ -2,7 +2,7 @@
 // ui/public/logos. Each logo is a trademark of its owner, shown to say Woolly
 // works with that app.
 
-const FILES = new Set(['claude', 'claudecode', 'codex', 'cursor', 'windsurf', 'geminicli', 'lmstudio', 'ollama', 'opencode', 'vscode', 'python']);
+const FILES = new Set(['openai', 'claude', 'claudecode', 'codex', 'cursor', 'windsurf', 'geminicli', 'lmstudio', 'ollama', 'opencode', 'vscode', 'python']);
 
 // App IDs and the names apps use in the activity log, mapped to a logo.
 const ALIASES: Record<string, string> = {
@@ -16,6 +16,9 @@ const ALIASES: Record<string, string> = {
   'vs code': 'vscode',
   'python app': 'python',
   proxy: 'ollama',
+  chatgpt: 'openai',
+  'chatgpt import': 'openai',
+  'claude import': 'claude',
 };
 
 /** A rounded app tile with the app's logo, or its initials. */

@@ -14,11 +14,13 @@ function dayKey(d: Date) {
 export function Home({
   onOpenTab,
   onOpenConflicts,
+  onImport,
   onToast,
   refresh,
 }: {
   onOpenTab: (tab: 'apps' | 'memories') => void;
   onOpenConflicts: () => void;
+  onImport: () => void;
   onToast: (t: Toast) => void;
   refresh: number;
 }) {
@@ -145,8 +147,8 @@ export function Home({
               <button className="btn primary" onClick={() => onOpenTab('apps')}>
                 Connect an app
               </button>
-              <button className="btn secondary" onClick={() => onOpenTab('memories')}>
-                Add one
+              <button className="btn secondary" onClick={onImport}>
+                Import from ChatGPT
               </button>
             </Empty>
           ) : (

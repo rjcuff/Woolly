@@ -69,6 +69,8 @@ curl -X POST localhost:11435/api/recall \
 | `GET` | `/api/activity` | Add `?app=cursor` for one app, `?limit=50` for fewer |
 | `GET` | `/api/apps` | Every app Woolly supports, and whether it's connected |
 | `POST` | `/api/apps/{id}/connect` | Connect an app, like `cursor`. `/disconnect` removes it |
+| `POST` | `/api/import/preview` | The export file itself. Returns the facts found, without saving |
+| `POST` | `/api/import/save` | `provider` (`chatgpt` or `claude`) and the `items` to keep |
 | `GET` | `/api/settings` | Version, Ollama status and sync status |
 | `POST` | `/api/sync/init` | Turn on sync and get a join code |
 | `POST` | `/api/sync/join` | `addr`, `code` |

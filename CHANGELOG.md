@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Import from ChatGPT and Claude in the app. Drop your data export into Memories → Import, review the facts Woolly found, uncheck what you don't want, and save. It works out which app the export came from, marks what Woolly already knows, and labels imported memories with where they came from. Also in the API: `POST /api/import/preview` and `/api/import/save`.
+- Exports saved without a `.zip` name are now read as zips.
+
 - Decisions. `woolly decide` and the new `decide` MCP tool save a choice with the reason and the options that were turned down. Sessions start with an Already decided list, and agents are told not to suggest a rejected option again. The Memories tab can filter to decisions.
 - Notes that know when they're out of date. Project notes saved in a git repo record the commit, and the startup context marks a note when files it mentions changed since.
 

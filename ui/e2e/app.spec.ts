@@ -87,6 +87,28 @@ test('memories tab filters decisions', async ({ page, isMobile }) => {
   await expect(page.locator('.mem-row').filter({ hasText: `green tea ${id}` })).toHaveCount(0);
 });
 
+test('imports facts from a ChatGPT export', async ({ page, isMobile }) => {
+  const city = `Springfield${unique()}`;
+  const exportJSON = JSON.stringify([
+    {
+      title: 't',
+      mapping: {
+        a: { message: { author: { role: 'user' }, content: { content_type: 'text', parts: [`I live in ${city}. What should I see?`] }, create_time: 1700000000 } },
+      },
+    },
+  ]);
+  await openTab(page, isMobile, 'Memories');
+  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Bring your memory with you' })).toBeVisible();
+  await page.locator('input[type=file]').setInputFiles({ name: 'conversations.json', mimeType: 'application/json', buffer: Buffer.from(exportJSON) });
+  await expect(page.getByRole('heading', { name: /Found \d+ fact/ })).toBeVisible();
+  await expect(page.getByText(city)).toBeVisible();
+  await page.getByRole('button', { name: /Save \d+ memor/ }).click();
+  await expect(page.getByText(/Saved \d+ memor/)).toBeVisible();
+  await page.getByRole('button', { name: 'See them' }).click();
+  await expect(page.locator('.mem-row').filter({ hasText: city })).toContainText('ChatGPT import');
+});
+
 test('the manager links back to the app', async ({ page }) => {
   await page.goto('/');
   await page.getByTitle('Back to chat').click();

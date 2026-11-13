@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Apps } from './app/Apps';
 import { Home } from './app/Home';
+import { Import } from './app/Import';
 import { Library, type LibraryView } from './app/Library';
 import { Memories } from './app/Memories';
 import { Settings } from './app/Settings';
@@ -30,6 +31,7 @@ export function ChatApp() {
   const [toast, setToast] = useState<Toast>(null);
   const [refresh, setRefresh] = useState(0);
   const [library, setLibrary] = useState<LibraryView | null>(null);
+  const [importing, setImporting] = useState(false);
   const [version, setVersion] = useState('');
 
   const flash = useCallback((t: Toast) => {
@@ -47,6 +49,7 @@ export function ChatApp() {
   const go = (t: Tab) => {
     setTab(t);
     setLibrary(null);
+    setImporting(false);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', t);
     window.history.replaceState(null, '', url);
@@ -105,11 +108,16 @@ export function ChatApp() {
               go('settings');
               setLibrary('conflicts');
             }}
+            onImport={() => {
+              go('memories');
+              setImporting(true);
+            }}
             onToast={flash}
             refresh={refresh}
           />
         )}
-        {tab === 'memories' && <Memories onToast={flash} onChanged={changed} refresh={refresh} />}
+        {tab === 'memories' && !importing && <Memories onToast={flash} onChanged={changed} refresh={refresh} onImport={() => setImporting(true)} />}
+        {tab === 'memories' && importing && <Import onBack={() => setImporting(false)} onToast={flash} onChanged={changed} />}
         {tab === 'apps' && <Apps onToast={flash} />}
         {tab === 'settings' && !library && <Settings onToast={flash} onOpen={setLibrary} />}
         {tab === 'settings' && library && <Library view={library} onBack={() => setLibrary(null)} onToast={flash} onChanged={changed} />}

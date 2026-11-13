@@ -5,7 +5,17 @@ import { AppLogo } from './logos';
 import { ago, I, Icon, Skeleton, type Toast } from './ui';
 
 /** Every current memory: add, search, edit in place and forget. */
-export function Memories({ onToast, onChanged, refresh }: { onToast: (t: Toast) => void; onChanged: () => void; refresh: number }) {
+export function Memories({
+  onToast,
+  onChanged,
+  refresh,
+  onImport,
+}: {
+  onToast: (t: Toast) => void;
+  onChanged: () => void;
+  refresh: number;
+  onImport: () => void;
+}) {
   const [items, setItems] = useState<Memory[] | null>(null);
   const [all, setAll] = useState<Memory[]>([]);
   const [query, setQuery] = useState('');
@@ -89,8 +99,12 @@ export function Memories({ onToast, onChanged, refresh }: { onToast: (t: Toast) 
   return (
     <div className="ca-page narrow">
       <div className="ca-title-row">
-        <h1 className="ca-title big">Memories</h1>
-        {items && <span className="ca-title-aside dim">{all.length}</span>}
+        <h1 className="ca-title big">
+          Memories {items && <span className="ca-title-aside dim">{all.length}</span>}
+        </h1>
+        <button className="btn secondary" onClick={onImport}>
+          Import
+        </button>
       </div>
 
       <form
@@ -148,8 +162,14 @@ export function Memories({ onToast, onChanged, refresh }: { onToast: (t: Toast) 
         <Empty
           icon={query || filter ? I.search : I.memory}
           title={query || filter ? 'No matches' : 'No memories yet'}
-          text={query || filter ? undefined : 'Add one above, or connect an app and it will save what matters.'}
-        />
+          text={query || filter ? undefined : 'Add one above, connect an app, or bring over what ChatGPT and Claude know about you.'}
+        >
+          {!query && !filter && (
+            <button className="btn primary" onClick={onImport}>
+              Import from ChatGPT or Claude
+            </button>
+          )}
+        </Empty>
       )}
 
       {shown.length > 0 && (

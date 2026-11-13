@@ -33,6 +33,25 @@ type Candidate struct {
 // Providers lists the supported exports.
 var Providers = []string{"chatgpt", "claude"}
 
+// Detect reads an export and works out which app it came from. It returns
+// the provider and the user's messages.
+func Detect(path string) (string, []Message, error) {
+	var firstErr error
+	for _, p := range []string{"chatgpt", "claude"} {
+		msgs, err := Load(p, path)
+		if err == nil && len(msgs) > 0 {
+			return p, msgs, nil
+		}
+		if firstErr == nil && err != nil {
+			firstErr = err
+		}
+	}
+	if firstErr != nil {
+		return "", nil, firstErr
+	}
+	return "", nil, fmt.Errorf("this doesn't look like a ChatGPT or Claude export")
+}
+
 // Load reads user messages from an export file. path may be the export
 // .zip or the conversations.json inside it. Messages come back oldest first.
 func Load(provider, path string) ([]Message, error) {
@@ -56,8 +75,20 @@ func Load(provider, path string) ([]Message, error) {
 	return msgs, nil
 }
 
+// isZip checks the file's first bytes, so uploads without a .zip name work.
+func isZip(path string) bool {
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+	var magic [4]byte
+	n, _ := io.ReadFull(f, magic[:])
+	return n == 4 && string(magic[:]) == "PK\x03\x04"
+}
+
 func readConversations(path string) ([]byte, error) {
-	if !strings.EqualFold(filepath.Ext(path), ".zip") {
+	if !isZip(path) {
 		return os.ReadFile(path)
 	}
 	zr, err := zip.OpenReader(path)

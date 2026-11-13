@@ -51,6 +51,31 @@ export type Settings = {
 };
 export type SyncResult = { addr: string; name?: string; received: number; sent: number; error?: string };
 
+export type ImportItem = { content: string; key?: string; tags?: string[]; known?: boolean };
+export type ImportPreview = { provider: string; name: string; messages: number; items: ImportItem[] };
+
+/** Uploads an export for a preview, reporting upload progress from 0 to 1. */
+export function importPreview(file: File, onProgress: (p: number) => void): Promise<ImportPreview> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/import/preview');
+    xhr.setRequestHeader('X-Woolly-Client', 'review page');
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
+    xhr.onload = () => {
+      let data: { error?: string } & Partial<ImportPreview> = {};
+      try {
+        data = JSON.parse(xhr.responseText);
+      } catch {
+        // Fall through to the generic error below.
+      }
+      if (xhr.status === 200) resolve(data as ImportPreview);
+      else reject(new Error(data.error ?? `Import failed (${xhr.status})`));
+    };
+    xhr.onerror = () => reject(new Error('Couldn’t reach Woolly'));
+    xhr.send(file);
+  });
+}
+
 export type RecallResult = { memory: Memory; score: number };
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -91,6 +116,11 @@ export const api = {
   apps: () => call<{ apps: AppStatus[] }>('/api/apps').then((r) => r.apps),
   setApp: (id: string, connect: boolean) =>
     call<{ result: string }>(`/api/apps/${encodeURIComponent(id)}/${connect ? 'connect' : 'disconnect'}`, { method: 'POST' }),
+  importSave: (provider: string, items: ImportItem[]) =>
+    call<{ added: number; known: number; conflicts: number; blocked: number }>('/api/import/save', {
+      method: 'POST',
+      body: JSON.stringify({ provider, items }),
+    }),
   settings: () => call<Settings>('/api/settings'),
   syncInit: () => call<{ code: string; addresses: string[] | null }>('/api/sync/init', { method: 'POST', body: '{}' }),
   syncJoin: (addr: string, code: string) =>

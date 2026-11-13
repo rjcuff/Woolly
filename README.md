@@ -62,7 +62,7 @@ Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm http
 
 **Shows you everything.** `woolly ui` opens the Woolly app: what your AI tools know, one-click app connections, and every memory to search, edit or forget. Or open the files yourself. Every memory notes which app saved it, and `woolly log` shows what each app saved, read and deleted.
 
-**Brings in your history.** `woolly import` pulls facts about you out of your ChatGPT and Claude exports.
+**Brings your memory with you.** Drop your ChatGPT or Claude export into the app (or run `woolly import`), review what it found, and keep what you want.
 
 **Stays private and safe.** No cloud, no account, no tracking. Passwords and API keys are refused, an AI can't plant instructions in your memory, and deleted memories go to a trash you can restore from.
 

@@ -551,3 +551,36 @@
 .mem-row:hover .mem-forget, .mem-forget:focus-visible { opacity: 1; }
 .mem-forget:hover { color: #ff3b30 !important; background: rgba(255, 59, 48, 0.1) !important; }
 @media (hover: none) { .mem-forget { opacity: 1; } }
+
+/* Import */
+.import-lede { margin: -12px 0 28px; font-size: 16px; color: var(--dim); max-width: 520px; }
+.drop {
+  width: 100%;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 40px 20px !important;
+  border-radius: 20px;
+  background: var(--card) !important;
+  box-shadow: inset 0 0 0 2px var(--hair-strong);
+  color: var(--dim) !important;
+  font-size: 14px;
+  transition: box-shadow 150ms var(--ease), background-color 150ms var(--ease);
+}
+.drop strong { color: var(--ink); font-size: 17px; font-weight: 600; margin-top: 8px; }
+.drop:hover, .drop.over { box-shadow: inset 0 0 0 2px var(--accent); background: var(--accent-soft) !important; }
+.drop-logos { display: flex; gap: 10px; }
+.how { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.how div { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 14px; background: var(--card); font-size: 13px; color: var(--dim); }
+.how strong { color: var(--ink); font-size: 14px; }
+.import-progress { margin: 0 0 24px; height: 6px; }
+.import-progress .bar { transition: width 200ms var(--ease); }
+.import-tools { display: flex; gap: 4px; margin: -16px 0 8px -8px; }
+.pick { display: flex; align-items: flex-start; gap: 12px; width: 100%; cursor: pointer; }
+.pick input { width: 18px !important; height: 18px; margin: 2px 0 0 !important; padding: 0 !important; accent-color: var(--accent); flex: none; }
+.pick .mem-body span:first-child { font-size: 15px; }
+.import-bar { position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: 8px; padding: 16px 0; background: linear-gradient(transparent, var(--bg) 30%); }
+.empty-icon.done { background: rgba(36, 138, 61, 0.12); color: var(--good); }
+.ca-title-row .ca-title .ca-title-aside { margin-left: 6px; font-size: 20px; }
+@media (max-width: 760px) { .how { grid-template-columns: minmax(0, 1fr); } }
