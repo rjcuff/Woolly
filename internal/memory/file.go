@@ -40,6 +40,7 @@ func encode(m *Memory) []byte {
 	w("conflicts_with", m.ConflictsWith)
 	w("via", m.Via)
 	w("project", m.Project)
+	w("commit", m.Commit)
 	b.WriteString("---\n\n")
 	b.WriteString(strings.TrimSpace(m.Content))
 	b.WriteString("\n")
@@ -90,6 +91,8 @@ func decode(data []byte) (*Memory, error) {
 			m.Via = v
 		case "project":
 			m.Project = NormalizeProject(v)
+		case "commit":
+			m.Commit = v
 		}
 	}
 	if m.ID == "" {

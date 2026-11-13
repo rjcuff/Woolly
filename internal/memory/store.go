@@ -201,6 +201,8 @@ type RememberInput struct {
 	// Project scopes the memory to one project. Keys only clash within the
 	// same project.
 	Project string
+	// Commit is the git commit a project note was saved at.
+	Commit string
 }
 
 // RememberResult reports what Remember did.
@@ -271,7 +273,7 @@ func (s *Store) Remember(in RememberInput) (*RememberResult, error) {
 	m := &Memory{
 		ID: newID(now), Content: content, Key: key, Tags: tags,
 		Source: src, Status: StatusActive, CreatedAt: now, UpdatedAt: now,
-		Via: CleanApp(in.Via), Project: project,
+		Via: CleanApp(in.Via), Project: project, Commit: in.Commit,
 	}
 	res := &RememberResult{}
 

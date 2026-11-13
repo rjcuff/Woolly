@@ -14,6 +14,8 @@ import (
 	"sync"
 
 	"github.com/rjcuff/woolly/internal/activity"
+	"github.com/rjcuff/woolly/internal/decision"
+	"github.com/rjcuff/woolly/internal/gitinfo"
 	"github.com/rjcuff/woolly/internal/handoff"
 	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/profile"
@@ -32,6 +34,7 @@ Use a stable "key" (e.g. "user.location", "project.acme.database") for facts tha
 Set source to "user" only when the user said it directly; use "agent" for things you inferred.
 Facts about the user (name, preferences, how they like to work) apply everywhere: leave "project" empty.
 Facts that only matter in one codebase (its stack, commands, decisions) belong to that project: set "project".
+When the user makes a decision or turns down an approach, call "decide" with the choice, why, and what was rejected. Never suggest a rejected option again unless the user brings it up.
 When you finish a piece of work or the user is wrapping up, call "handoff" with what you were working on, what got done, what was decided and what's next, so the next session in any app can pick up.`
 
 // Server is an MCP server backed by a Woolly store.
@@ -43,6 +46,9 @@ type Server struct {
 	Activity *activity.Log
 	// Repo, if set, is a git repo that shares its project memories.
 	Repo *share.Repo
+	// Root is the git repo the app works in, if any. Project notes record
+	// its commit so Woolly can tell when they go out of date.
+	Root string
 	// Project is the project the app is working in, if Woolly can tell.
 	// Searches then cover the user's memories plus this project's, and
 	// leave other projects out.
@@ -210,6 +216,18 @@ var tools = []map[string]any{
 		}, "query"),
 	},
 	{
+		"name":        "decide",
+		"title":       "Save a decision",
+		"description": "Save a decision with the reason and the options that were turned down, so no app suggests them again. Use when the user chooses an approach or rejects one.",
+		"inputSchema": obj(map[string]any{
+			"decision": map[string]any{"type": "string", "description": "What was chosen, like \"Use in-memory rate limiting\"."},
+			"why":      map[string]any{"type": "string", "description": "The reason, in a few words."},
+			"rejected": map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Options that were turned down, each with why, like \"Redis: overkill for one server\"."},
+			"key":      map[string]any{"type": "string", "description": "Optional stable name, like \"ratelimit.store\", so a later decision on the same thing replaces this one."},
+			"project":  map[string]any{"type": "string", "description": "The project it's about. Defaults to the current project."},
+		}, "decision"),
+	},
+	{
 		"name":        "handoff",
 		"title":       "Save handoff",
 		"description": "Save a short note on where this session left off: what you were working on, what got done, what was decided and what's next. The next session in any app starts with it. One per project; a new one replaces the last.",
@@ -269,7 +287,7 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			}
 			src = parsed
 		}
-		res, err := s.Store.Remember(memory.RememberInput{Content: a.Content, Key: a.Key, Tags: toStrings(a.Tags), Source: src, Via: s.appName(), Project: a.Project})
+		res, err := s.Store.Remember(memory.RememberInput{Content: a.Content, Key: a.Key, Tags: toStrings(a.Tags), Source: src, Via: s.appName(), Project: a.Project, Commit: s.commit(a.Project)})
 		if err != nil {
 			return "", err
 		}
@@ -322,6 +340,8 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 		if h := handoff.Latest(s.Store, s.Project); h != nil {
 			out += "# Where you left off\n\n" + h.Content + "\n\n"
 		}
+		decided, _ := decision.Section(mems, memory.NormalizeProject(s.Project))
+		out += decided
 		out += profile.Build(mems).Markdown()
 		if p := memory.NormalizeProject(s.Project); p != "" {
 			var lines []string
@@ -335,6 +355,35 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 			}
 		}
 		return out, nil
+
+	case "decide":
+		var a struct {
+			Decision string `json:"decision"`
+			Why      string `json:"why"`
+			Rejected any    `json:"rejected"`
+			Key      string `json:"key"`
+			Project  string `json:"project"`
+		}
+		_ = json.Unmarshal(raw, &a)
+		if strings.TrimSpace(a.Decision) == "" {
+			return "", errors.New("decision is empty")
+		}
+		project := a.Project
+		if project == "" {
+			project = s.Project
+		}
+		res, err := s.Store.Remember(memory.RememberInput{
+			Content: decision.Format(a.Decision, a.Why, toStrings(a.Rejected)), Key: a.Key, Tags: []string{decision.Tag},
+			Source: memory.SourceAgent, Via: s.appName(), Project: project, Commit: s.commit(project),
+		})
+		if err != nil {
+			return "", err
+		}
+		s.log("remember", []string{res.Memory.ID}, "", 0)
+		if res.Memory.Project != "" {
+			s.shareRepo()
+		}
+		return "Saved: " + res.Memory.Content, nil
 
 	case "handoff":
 		var a struct {
@@ -412,6 +461,14 @@ func (s *Server) instructions() string {
 		return instructions + "\nThe current project is \"" + p + "\"."
 	}
 	return instructions
+}
+
+// commit returns the repo's commit for a project note, or "".
+func (s *Server) commit(project string) string {
+	if project == "" || s.Root == "" {
+		return ""
+	}
+	return gitinfo.Head(s.Root)
 }
 
 // shareRepo writes project notes to the shared repo after a change.

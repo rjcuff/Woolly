@@ -15,7 +15,7 @@ func TestBuildContext(t *testing.T) {
 		{ID: "b", Content: "I prefer short answers", Status: memory.StatusActive},
 		{ID: "c", Content: "Deploys on Fridays", Tags: []string{"woolly"}, Status: memory.StatusActive},
 	}
-	out, ids := buildContext(mems, "woolly")
+	out, ids := buildContext(mems, "woolly", "")
 	if len(ids) != 2 || !strings.Contains(out, "# This project (woolly)") || !strings.Contains(out, "I prefer short answers") {
 		t.Fatalf("ids %v\n%s", ids, out)
 	}
@@ -33,11 +33,11 @@ func TestBuildContextLeavesOtherProjectsOut(t *testing.T) {
 		{ID: "b", Content: "Uses SQLite", Project: "notes", Status: memory.StatusActive},
 		{ID: "c", Content: "Likes tea", Status: memory.StatusActive},
 	}
-	out, ids := buildContext(mems, "acme")
+	out, ids := buildContext(mems, "acme", "")
 	if len(ids) != 1 || !strings.Contains(out, "Uses Postgres") || !strings.Contains(out, "Likes tea") || strings.Contains(out, "SQLite") {
 		t.Fatalf("ids %v\n%s", ids, out)
 	}
-	if out, _ := buildContext(mems, ""); strings.Contains(out, "Postgres") || strings.Contains(out, "SQLite") {
+	if out, _ := buildContext(mems, "", ""); strings.Contains(out, "Postgres") || strings.Contains(out, "SQLite") {
 		t.Fatalf("outside a project, project memories stay out:\n%s", out)
 	}
 }
@@ -47,7 +47,7 @@ func TestBuildContextStaysUnderLimit(t *testing.T) {
 	for i := 0; i < 2000; i++ {
 		mems = append(mems, memory.Memory{ID: "x", Content: "A fairly long note that repeats many times over", Status: memory.StatusActive})
 	}
-	out, _ := buildContext(mems, "")
+	out, _ := buildContext(mems, "", "")
 	if len(out) > contextLimit+100 || !strings.Contains(out, "More in Woolly") {
 		t.Fatalf("len %d", len(out))
 	}
@@ -63,5 +63,16 @@ func TestProjectName(t *testing.T) {
 	}
 	if h, _ := os.UserHomeDir(); projectName(h) != "" {
 		t.Fatal("home folder is not a project")
+	}
+}
+
+func TestDecisionsLeadTheContext(t *testing.T) {
+	mems := []memory.Memory{
+		{ID: "a", Content: "acme uses Postgres", Project: "acme", Status: memory.StatusActive},
+		{ID: "b", Content: "Decided: in-memory rate limits. Rejected: Redis.", Tags: []string{"decision"}, Project: "acme", Status: memory.StatusActive},
+	}
+	out, ids := buildContext(mems, "acme", "")
+	if len(ids) != 2 || strings.Index(out, "Already decided") > strings.Index(out, "This project") || strings.Count(out, "Rejected: Redis") != 1 {
+		t.Fatalf("%v\n%s", ids, out)
 	}
 }

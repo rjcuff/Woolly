@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Decisions. `woolly decide` and the new `decide` MCP tool save a choice with the reason and the options that were turned down. Sessions start with an Already decided list, and agents are told not to suggest a rejected option again. The Memories tab can filter to decisions.
+- Notes that know when they're out of date. Project notes saved in a git repo record the commit, and the startup context marks a note when files it mentions changed since.
+
 ## 0.11.0
 
 - The Mac app is signed and notarized by Apple, so it opens with a double-click. [Download it](https://github.com/rjcuff/woolly/releases/latest/download/Woolly-mac.dmg). One download works on Apple Silicon and Intel.

@@ -54,6 +54,8 @@ Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm http
 
 **Picks up where you left off.** When Claude Code compacts or a session ends, Woolly saves what you were doing, what was decided and what's next. The next session starts there, in any app.
 
+**Remembers what you decided, and why.** Decisions are saved with the reason and the options you turned down, so agents stop suggesting what you already rejected. Notes about your code are marked when the files they mention have changed since.
+
 **Shares project memory with your team.** `woolly share` keeps a repo's project notes in `.woolly/` so everyone's agents start with the same context. Commit it like any other file. No cloud.
 
 **Keeps projects apart.** Notes about a codebase stay with that repo, and facts about you go everywhere. Your AI in one project never gets another project's notes.
@@ -100,6 +102,7 @@ woolly ui               # open the Woolly app
 woolly log              # what each app saved, read and deleted
 woolly handoff          # where you left off in this project
 woolly share            # share this repo's project memories with your team
+woolly decide "Use Postgres" --why "JSON queries" --rejected "MySQL: weaker JSON"
 woolly learn "I just moved to Denver"   # a local model picks out the facts
 woolly sync init        # keep your devices in step
 woolly import chatgpt ~/Downloads/export.zip --dry-run

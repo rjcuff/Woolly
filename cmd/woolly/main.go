@@ -68,6 +68,7 @@ Usage:
   woolly context               print what Woolly knows, for an app to read at startup
   woolly handoff               where you left off in this project
   woolly share [--agents-md]   share this repo's project memories with your team
+  woolly decide <choice> [--why ...] [--rejected "X: reason"]  save a decision
   woolly resolve <id>          keep this memory as the current fact for its key
   woolly ui                    open the review page in your browser
   woolly connect [app...]      add Woolly to Claude, Cursor, VS Code, Codex, Gemini and more
@@ -140,6 +141,8 @@ func run(args []string) error {
 		return cmdHandoff(rest)
 	case "share":
 		return cmdShare(rest)
+	case "decide":
+		return cmdDecide(rest)
 	case "resolve":
 		return cmdResolve(rest)
 	case "ui":
@@ -267,7 +270,7 @@ func cmdRemember(args []string) error {
 		return err
 	}
 	res, err := a.store.Remember(memory.RememberInput{
-		Content: text, Key: *key, Tags: []string{*tags}, Source: src, AllowSensitive: *allowSecret, Via: cli, Project: *project,
+		Content: text, Key: *key, Tags: []string{*tags}, Source: src, AllowSensitive: *allowSecret, Via: cli, Project: *project, Commit: commitFor(*project),
 	})
 	var sensitive *memory.SensitiveError
 	if errors.As(err, &sensitive) {
@@ -798,9 +801,12 @@ func cmdMCP(args []string) error {
 	defer stop()
 	s := &mcp.Server{Store: a.store, Engine: a.engine, Version: version, Activity: a.log, Project: mcpProject()}
 	if cwd, err := os.Getwd(); err == nil {
-		if r := share.Find(cwd); r != nil && r.Enabled() {
-			s.Repo = r
-			_, _ = r.Sync(a.store)
+		if r := share.Find(cwd); r != nil {
+			s.Root = r.Dir
+			if r.Enabled() {
+				s.Repo = r
+				_, _ = r.Sync(a.store)
+			}
 		}
 	}
 	return s.Serve(ctx, os.Stdin, os.Stdout)

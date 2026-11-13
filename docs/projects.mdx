@@ -37,6 +37,20 @@ woolly list --project acme
 woolly recall "how do we deploy" --project acme
 ```
 
+## Decisions
+
+Agents tend to suggest what you already turned down. A decision memory records the choice, why, and what was rejected:
+
+```sh
+woolly decide "Use in-memory rate limiting" --why "one server is enough" --rejected "Redis: overkill for one server"
+```
+
+Connected AI apps save decisions too, with the `decide` tool. Every session in the project starts with an **Already decided** list and is told not to suggest a rejected option again unless you bring it up. Give a decision a `--key` and a later decision on the same thing replaces it, with the old one kept in History.
+
+## Notes that know when they're out of date
+
+When a project note is saved in a git repo, Woolly records the commit. If a file the note mentions changes after that, the note is marked at the start of the next session, like *may be out of date: api/ratelimit.go changed in 2 commits since*, so the agent checks before relying on it.
+
 ## Share with your team
 
 ```sh

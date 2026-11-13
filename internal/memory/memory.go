@@ -67,6 +67,9 @@ type Memory struct {
 	// Project is set for facts that only matter in one project, like a
 	// repo's database. Facts about the user have no project.
 	Project string `json:"project,omitempty"`
+	// Commit is the git commit a project note was saved at, so Woolly can
+	// tell when the code it describes has changed since.
+	Commit string `json:"commit,omitempty"`
 
 	file string // path on disk; empty until saved
 }

@@ -77,6 +77,16 @@ test('memories tab adds, searches, edits and forgets', async ({ page, isMobile }
   await expect(row()).toContainText('Keeps two hives of bees');
 });
 
+test('memories tab filters decisions', async ({ page, isMobile }) => {
+  const id = unique();
+  await page.request.post('/api/remember', { data: { content: `Decided: use Postgres ${id}. Rejected: MySQL.`, tags: ['decision'] } });
+  await page.request.post('/api/remember', { data: { content: `Likes green tea ${id}` } });
+  await openTab(page, isMobile, 'Memories');
+  await page.getByRole('button', { name: 'Decisions', exact: true }).click();
+  await expect(page.locator('.mem-row').filter({ hasText: `use Postgres ${id}` })).toBeVisible();
+  await expect(page.locator('.mem-row').filter({ hasText: `green tea ${id}` })).toHaveCount(0);
+});
+
 test('the manager links back to the app', async ({ page }) => {
   await page.goto('/');
   await page.getByTitle('Back to chat').click();

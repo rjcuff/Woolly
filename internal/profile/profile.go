@@ -25,7 +25,7 @@ func Build(mems []memory.Memory) Profile {
 	var p Profile
 	for _, m := range mems {
 		// Project memories describe a project, not the user.
-		if m.Status != memory.StatusActive || m.Project != "" || m.Key == "handoff" {
+		if m.Status != memory.StatusActive || m.Project != "" || m.Key == "handoff" || hasTag(m, "decision") {
 			continue
 		}
 		switch {

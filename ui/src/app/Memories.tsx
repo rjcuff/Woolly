@@ -36,7 +36,11 @@ export function Memories({ onToast, onChanged, refresh }: { onToast: (t: Toast) 
   }, [editing]);
 
   const projects = useMemo(() => [...new Set(all.map((m) => m.project).filter((p): p is string => !!p))].sort(), [all]);
-  const shown = (items ?? []).filter((m) => !filter || (filter === '-' ? !m.project : m.project === filter));
+  const isDecision = (m: Memory) => (m.tags ?? []).includes('decision');
+  const hasDecisions = all.some(isDecision);
+  const shown = (items ?? []).filter((m) =>
+    !filter ? true : filter === '-' ? !m.project && !isDecision(m) : filter === '=decision' ? isDecision(m) : m.project === filter,
+  );
 
   const add = async () => {
     const text = draft.trim();
@@ -110,11 +114,12 @@ export function Memories({ onToast, onChanged, refresh }: { onToast: (t: Toast) 
           <Icon d={I.search} size={16} />
           <input type="search" aria-label="Search memories" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} />
         </label>
-        {projects.length > 0 && (
+        {(projects.length > 0 || hasDecisions) && (
           <div className="chips" role="group" aria-label="Filter">
             {[
               ['', 'All'],
               ['-', 'About you'],
+              ...(hasDecisions ? [['=decision', 'Decisions']] : []),
               ...projects.map((p) => [p, p]),
             ].map(([value, label]) => (
               <button key={value} className={`chip${filter === value ? ' on' : ''}`} aria-pressed={filter === value} onClick={() => setFilter(value)}>
