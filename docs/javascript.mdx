@@ -1,0 +1,63 @@
+---
+title: JavaScript
+description: Add Woolly memory to JavaScript and TypeScript apps, including the Vercel AI SDK.
+---
+
+```sh
+npm install woolly-ai
+```
+
+Woolly needs to be running: [download the Mac app](https://usewoolly.com/download) or run `woolly serve`.
+
+## Save and recall
+
+```ts
+import { Woolly } from 'woolly-ai';
+
+const w = new Woolly({ app: 'My app' });
+
+await w.remember('Moved to Denver in October', { key: 'user.location' });
+for (const m of await w.recall('where do I live?')) console.log(m.content);
+```
+
+Give a `key` for facts that can change. A newer memory with the same key replaces the older one. `app` is the name your memories are saved under and how your app shows up in `woolly log`.
+
+## Add memory to a prompt
+
+```ts
+const system = `You are a helpful assistant.\n\n${await w.context(userMessage)}`;
+```
+
+`context` returns the relevant memories as a short note that tells the model they're information, not instructions, or an empty string when nothing is relevant.
+
+## Vercel AI SDK
+
+Wrap any model and every call gets the user's relevant memories as a system message:
+
+```ts
+import { generateText, wrapLanguageModel } from 'ai';
+import { woollyMemory } from 'woolly-ai/ai-sdk';
+
+const model = wrapLanguageModel({ model: yourModel, middleware: woollyMemory() });
+const { text } = await generateText({ model, prompt: 'Any snack ideas?' });
+```
+
+Options: `limit` (memories per call, default 6), `project`, and any `new Woolly()` option. If Woolly isn't running, calls go through unchanged.
+
+## Learn from a conversation
+
+With Ollama running, a local model picks out the facts worth keeping. See [Smart memory](/docs/learn).
+
+```ts
+const steps = await w.learn([
+  { role: 'user', content: 'I just moved to Denver. Keep answers short.' },
+]);
+```
+
+## Everything else
+
+`list`, `get`, `update`, `forget`, `restore`, `trash`, `conflicts`, `resolve` and `profile`. Pass `project` to keep notes about one codebase separate, see [Projects](/docs/projects).
+
+Errors are `WoollyError`, with `status` set to the HTTP status. When nothing answers at Woolly's address you get `WoollyNotRunning`.
+
+`new Woolly()` uses `WOOLLY_HOST` and `WOOLLY_HOME` like the rest of Woolly. Requires Node 18 or newer.

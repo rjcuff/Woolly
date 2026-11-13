@@ -66,7 +66,7 @@ Other ways to install: `brew install rjcuff/tap/woolly`, or on Windows `irm http
 
 **Stays private and safe.** No cloud, no account, no tracking. Passwords and API keys are refused, an AI can't plant instructions in your memory, and deleted memories go to a trash you can restore from.
 
-**Builds into your apps.** `pip install woolly-ai` and add memory to any prompt in one line.
+**Builds into your apps.** `pip install woolly-ai` or `npm install woolly-ai`, and add memory to any prompt in one line. There's a Vercel AI SDK helper too.
 
 ## Give Ollama a memory
 
@@ -76,6 +76,22 @@ OLLAMA_HOST=127.0.0.1:11436 ollama run llama3.2
 ```
 
 Every chat now includes what Woolly knows about you, and facts you mention are saved. For OpenAI or Anthropic apps, point the app's base URL at the proxy. See [Proxy](https://usewoolly.com/docs/proxy).
+
+## Use it from JavaScript
+
+```sh
+npm install woolly-ai
+```
+
+```ts
+import { Woolly } from 'woolly-ai';
+
+const w = new Woolly({ app: 'My app' });
+await w.remember('Moved to Denver in October', { key: 'user.location' });
+const system = `You are a helpful assistant.\n\n${await w.context(userMessage)}`;
+```
+
+With the Vercel AI SDK: `wrapLanguageModel({ model, middleware: woollyMemory() })` from `woolly-ai/ai-sdk`.
 
 ## Use it from Python
 
@@ -141,6 +157,7 @@ No. Woolly works on its own. If Ollama is running, Woolly also uses it to search
 | `ui` | The Woolly app's screens, built into the binary |
 | `app` | The Mac app (Tauri), which wraps the same screens |
 | `sdk/python` | The `woolly-ai` Python package |
+| `sdk/js` | The `woolly-ai` JavaScript and TypeScript package |
 | `web` | Website and docs site |
 | `scripts` | Install, release and Homebrew scripts |
 | `packaging/homebrew` | The Homebrew formula, kept in step with the tap |

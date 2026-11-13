@@ -1,0 +1,52 @@
+{
+  "name": "woolly-ai",
+  "version": "0.1.0",
+  "description": "JavaScript and TypeScript client for Woolly, the local memory for your AI tools.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./ai-sdk": {
+      "types": "./dist/ai-sdk.d.ts",
+      "default": "./dist/ai-sdk.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/"
+  },
+  "keywords": [
+    "ai",
+    "memory",
+    "llm",
+    "mcp",
+    "local",
+    "ollama",
+    "claude",
+    "agents"
+  ],
+  "homepage": "https://usewoolly.com/docs/javascript",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rjcuff/woolly.git",
+    "directory": "sdk/js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "ai": "7.0.171",
+    "typescript": "5.9.3"
+  }
+}

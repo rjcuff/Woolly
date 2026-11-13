@@ -1,7 +1,7 @@
 VERSION ?= 0.1.0-dev
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: build test install ui web-test ui-test py-test check release publish demo pypi app
+.PHONY: build test install ui web-test ui-test py-test js-test check release publish demo pypi npm app
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/woolly ./cmd/woolly
@@ -29,7 +29,11 @@ web-test:
 py-test: build
 	cd sdk/python && python3 -m unittest discover -s tests
 
-check: test web-test ui-test py-test
+# Tests the JavaScript package against a real woolly server.
+js-test: build
+	cd sdk/js && { [ -d node_modules ] || npm install --no-audit --no-fund; } && npm test
+
+check: test web-test ui-test py-test js-test
 
 # make release VERSION=0.1.1
 release: check
@@ -55,3 +59,7 @@ pypi: py-test
 # Builds the desktop app for this computer. Needs Rust (rustup.rs).
 app:
 	scripts/app.sh $(VERSION)
+
+# Publishes the woolly-ai npm package. Bump the version in sdk/js/package.json first.
+npm: js-test
+	cd sdk/js && npm publish --access public

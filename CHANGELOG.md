@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- JavaScript and TypeScript package: `npm install woolly-ai`. Save, recall, learn and add memory to prompts from Node apps, plus `woollyMemory()` middleware for the Vercel AI SDK that adds the user's relevant memories to every call. See [JavaScript](https://usewoolly.com/docs/javascript).
+
 ## 0.12.0
 
 - Import is smarter with Ollama. When the learning model is installed, Woolly has it read your recent messages about yourself and combines what it finds with the simple rules. In testing it found every fact in a sample export, up from about half.
