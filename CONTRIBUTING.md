@@ -6,6 +6,22 @@ Thanks for helping out. Bug reports, fixes, docs and new ideas are all welcome.
 
 For anything bigger than a small fix, open an issue first so we can agree on the approach. It saves you from writing code that doesn't get merged.
 
+## Repo layout
+
+| Folder | Contents |
+| --- | --- |
+| `cmd/woolly`, `internal` | The Woolly program, written in Go |
+| `docs` | Documentation in MDX |
+| `ui` | The Woolly app's screens, built into the binary |
+| `app` | The Mac app (Tauri), which wraps the same screens |
+| `sdk/python` | The `woolly-ai` Python package |
+| `sdk/js` | The `woolly-ai` JavaScript and TypeScript package |
+| `bench/locomo` | The LOCOMO benchmark |
+| `web` | Website and docs site |
+| `scripts` | Install, release, demo and Homebrew scripts |
+| `packaging/homebrew` | The Homebrew formula, kept in step with the tap |
+| `packaging/mcpb` | The Claude Desktop bundle |
+
 ## Setup
 
 You need Go 1.22 or newer. Node 22 is only needed for the website.
@@ -81,6 +97,12 @@ The site builds to static files in `web/build/client`. It deploys on Vercel with
 
 ```sh
 make demo
+```
+
+`docs/init-demo.gif`, the shared project memory demo, comes from a [VHS](https://github.com/charmbracelet/vhs) tape:
+
+```sh
+make build && PATH="$PWD/bin:$PATH" vhs scripts/demo/init.tape
 ```
 
 ## Releases

@@ -9,8 +9,11 @@ import (
 	"time"
 
 	"github.com/rjcuff/woolly/internal/activity"
+	"github.com/rjcuff/woolly/internal/decision"
+	"github.com/rjcuff/woolly/internal/gitinfo"
 	"github.com/rjcuff/woolly/internal/handoff"
 	"github.com/rjcuff/woolly/internal/memory"
+	"github.com/rjcuff/woolly/internal/share"
 )
 
 // hookInput is what Claude Code sends a hook on stdin.
@@ -80,13 +83,12 @@ func cmdHandoff(args []string) error {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 		defer cancel()
-		text, err := handoff.Summarize(ctx, a.ollama, turns)
-		if err != nil {
-			return nil
+		if text, err := handoff.Summarize(ctx, a.ollama, turns); err == nil {
+			if m, err := handoff.Save(a.store, project, app, text); err == nil {
+				a.log.Add(activity.Entry{App: app, Action: "handoff", IDs: []string{m.ID}})
+			}
 		}
-		if m, err := handoff.Save(a.store, project, app, text); err == nil {
-			a.log.Add(activity.Entry{App: app, Action: "handoff", IDs: []string{m.ID}})
-		}
+		a.captureDecisions(ctx, cwd, app, turns)
 		return nil
 	}
 
@@ -135,6 +137,42 @@ func saveFromHook(in hookInput, app string) error {
 		return err
 	}
 	return startDetached(exe, []string{"handoff", "--summarize", "--transcript", in.Transcript, "--cwd", in.Cwd, "--app", app})
+}
+
+// captureDecisions saves the decisions from a session to the repo's project
+// memory, when the repo has one and hasn't turned this off.
+func (a *app) captureDecisions(ctx context.Context, dir, app string, turns []handoff.Turn) {
+	r := share.Find(dir)
+	if r == nil || !r.Enabled() || !r.Config().Capture {
+		return
+	}
+	found, err := handoff.Decisions(ctx, a.ollama, turns)
+	if err != nil || len(found) == 0 {
+		return
+	}
+	mems, _ := a.store.List(false)
+	var ids []string
+	for _, d := range found {
+		text := decision.Format(d.Choice, d.Why, d.Rejected)
+		seen := false
+		for _, m := range mems {
+			seen = seen || (m.Project == r.Project && decision.Is(m) && handoff.Similar(m.Content, text))
+		}
+		if seen {
+			continue
+		}
+		res, err := a.store.Remember(memory.RememberInput{
+			Content: text, Tags: []string{decision.Tag}, Source: memory.SourceAgent,
+			Via: app, Project: r.Project, Commit: gitinfo.Head(r.Dir),
+		})
+		if err == nil {
+			ids = append(ids, res.Memory.ID)
+		}
+	}
+	if len(ids) > 0 {
+		a.log.Add(activity.Entry{App: app, Action: "remember", IDs: ids})
+		_, _ = r.Sync(a.store)
+	}
 }
 
 // from says which app saved a handoff and when.

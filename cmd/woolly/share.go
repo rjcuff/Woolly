@@ -4,16 +4,22 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 
+	"github.com/rjcuff/woolly/internal/memory"
 	"github.com/rjcuff/woolly/internal/share"
 )
 
-// cmdShare keeps this repo's project memories in .woolly/, so teammates'
-// agents share them.
-func cmdShare(args []string) error {
-	fs := newFlags("share")
-	agents := fs.Bool("agents-md", false, "also keep a Project notes section in AGENTS.md")
-	stop := fs.Bool("stop", false, "stop sharing and remove .woolly/ from this repo")
+// cmdInit keeps this repo's project memory in .woolly/woolly.md, so
+// teammates' agents read and update the same notes.
+func cmdInit(args []string) error {
+	fs := newFlags("init")
+	export := fs.String("export", "", "keep a Woolly section in these files: claude, agents, or none")
+	agents := fs.Bool("agents-md", false, "same as --export agents")
+	capture := fs.Bool("capture", false, "save decisions when a Claude Code session ends (the default)")
+	noCapture := fs.Bool("no-capture", false, "don't save decisions when a session ends")
+	stop := fs.Bool("stop", false, "stop keeping memory in this repo and remove .woolly/")
 	if _, err := parse(fs, args); err != nil {
 		return err
 	}
@@ -26,47 +32,158 @@ func cmdShare(args []string) error {
 		if err := r.Disable(); err != nil {
 			return err
 		}
-		fmt.Println("Stopped sharing. Your memories are still on this computer.")
+		fmt.Println("Removed .woolly/ from this repo. Your memories are still on this computer.")
 		return nil
 	}
+
+	var opts share.Options
+	if *agents && *export == "" {
+		*export = "agents"
+	}
+	if *export != "" {
+		opts.Export = []string{}
+		for _, e := range strings.Split(*export, ",") {
+			switch e = strings.ToLower(strings.TrimSpace(e)); e {
+			case "claude", "agents":
+				opts.Export = append(opts.Export, e)
+			case "none", "":
+			default:
+				return fmt.Errorf("--export takes claude, agents or none, not %q", e)
+			}
+		}
+	}
+	if *capture || *noCapture {
+		on := !*noCapture
+		opts.Capture = &on
+	}
+
 	a, err := open()
 	if err != nil {
 		return err
 	}
 	first := !r.Enabled()
-	if err := r.Enable(); err != nil {
-		return err
-	}
-	res, err := r.Sync(a.store)
+	res, err := r.Init(a.store, opts)
 	if err != nil {
 		return err
 	}
-	if *agents {
-		if _, err := r.WriteAgentsMD(a.store, true); err != nil {
-			return err
-		}
-	} else {
-		_, _ = r.WriteAgentsMD(a.store, false)
-	}
+	cfg := r.Config()
 	if first {
-		fmt.Printf("Sharing %s's project memories in .woolly/memories (%d so far).\n", r.Project, res.Exported)
-		fmt.Println("Commit .woolly/ so your team's agents start with the same notes.")
-		fmt.Println("Only notes about this project are shared, never anything personal.")
-		return nil
+		fmt.Printf("Created .woolly/woolly.md for %s", r.Project)
+		if res.Exported == 1 {
+			fmt.Print(" with 1 note you already had")
+		} else if res.Exported > 1 {
+			fmt.Printf(" with %d notes you already had", res.Exported)
+		}
+		fmt.Println(".")
+		fmt.Println("Commit .woolly/ and .gitattributes so your team's agents share the same project memory.")
+		fmt.Println("Only notes about this project go there, never anything personal.")
+	} else if d := res.Describe(); d != "" {
+		fmt.Println("Synced: " + d + ".")
+	} else {
+		fmt.Println("Project memory is up to date.")
 	}
-	fmt.Printf("Synced: %d new from the repo, %d written to it.\n", res.Imported, res.Exported)
-	if res.Skipped > 0 {
-		fmt.Printf("Skipped %d that weren't plain project notes.\n", res.Skipped)
+	if len(cfg.Export) > 0 {
+		fmt.Printf("Keeping a Woolly section in %s.\n", exportFiles(cfg.Export))
+	}
+	if cfg.Capture {
+		fmt.Println("Decisions from Claude Code sessions are saved here when they end (turn off with --no-capture).")
 	}
 	return nil
 }
 
-// syncRepo shares project memories with the repo at dir, if it shares them.
-func (a *app) syncRepo(dir string) {
-	r := share.Find(dir)
-	if r == nil || !r.Enabled() {
-		return
+func exportFiles(list []string) string {
+	var out []string
+	for _, e := range list {
+		out = append(out, map[string]string{"claude": "CLAUDE.md", "agents": "AGENTS.md"}[e])
 	}
-	_, _ = r.Sync(a.store)
-	_, _ = r.WriteAgentsMD(a.store, false)
+	return strings.Join(out, " and ")
+}
+
+// cmdProject shows this repo's project memory, or opens it to edit.
+func cmdProject(args []string) error {
+	fs := newFlags("project")
+	if _, err := parse(fs, args); err != nil {
+		return err
+	}
+	cwd, _ := os.Getwd()
+	r := share.Find(cwd)
+	if r == nil || !r.Enabled() {
+		return errors.New("no project memory here yet. Run woolly init in your repo")
+	}
+	a, err := open()
+	if err != nil {
+		return err
+	}
+	if _, err := r.Sync(a.store); err != nil {
+		return err
+	}
+
+	if fs.NArg() > 0 && fs.Arg(0) == "edit" {
+		editor := os.Getenv("VISUAL")
+		if editor == "" {
+			editor = os.Getenv("EDITOR")
+		}
+		if editor == "" {
+			editor = "vi"
+		}
+		parts := strings.Fields(editor)
+		cmd := exec.Command(parts[0], append(parts[1:], r.File())...)
+		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+		res, err := r.Sync(a.store)
+		if err != nil {
+			return err
+		}
+		if d := res.Describe(); d != "" {
+			fmt.Println("Saved: " + d + ".")
+		} else {
+			fmt.Println("No changes.")
+		}
+		return nil
+	} else if fs.NArg() > 0 {
+		return fmt.Errorf("unknown: woolly project %s (try woolly project or woolly project edit)", fs.Arg(0))
+	}
+
+	mems, err := a.store.List(false)
+	if err != nil {
+		return err
+	}
+	by := map[string][]memory.Memory{}
+	n := 0
+	for _, m := range mems {
+		if m.Project == r.Project && m.Key != "handoff" {
+			s := share.SectionOf(m)
+			by[s] = append(by[s], m)
+			n++
+		}
+	}
+	fmt.Printf("%s project memory, from .woolly/woolly.md (%d)\n", r.Project, n)
+	if n == 0 {
+		fmt.Println("\nNothing yet. Agents add notes here as they learn about the project, or run woolly project edit.")
+		return nil
+	}
+	for _, name := range share.SectionNames() {
+		if len(by[name]) == 0 {
+			continue
+		}
+		fmt.Printf("\n%s\n", name)
+		for _, m := range by[name] {
+			via := ""
+			if m.Via != "" {
+				via = "  (" + m.Via + ")"
+			}
+			fmt.Printf("  - %s%s\n", m.Content, via)
+		}
+	}
+	fmt.Println("\nEdit with: woolly project edit")
+	return nil
+}
+
+// syncRepo brings the repo's project memory up to date, if it keeps one.
+func (a *app) syncRepo(dir string) {
+	if r := share.Find(dir); r != nil && r.Enabled() {
+		_, _ = r.Sync(a.store)
+	}
 }

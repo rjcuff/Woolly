@@ -203,6 +203,9 @@ type RememberInput struct {
 	Project string
 	// Commit is the git commit a project note was saved at.
 	Commit string
+	// ID, if set and free, is used instead of a new one, so a note shared
+	// through a repo keeps the same ID on every computer.
+	ID string
 }
 
 // RememberResult reports what Remember did.
@@ -270,8 +273,12 @@ func (s *Store) Remember(in RememberInput) (*RememberResult, error) {
 		return &RememberResult{Memory: ex.clone(), Duplicate: true}, nil
 	}
 
+	id := newID(now)
+	if in.ID != "" && ValidID(in.ID) && s.mems[in.ID] == nil {
+		id = in.ID
+	}
 	m := &Memory{
-		ID: newID(now), Content: content, Key: key, Tags: tags,
+		ID: id, Content: content, Key: key, Tags: tags,
 		Source: src, Status: StatusActive, CreatedAt: now, UpdatedAt: now,
 		Via: CleanApp(in.Via), Project: project, Commit: in.Commit,
 	}

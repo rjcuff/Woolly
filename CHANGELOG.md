@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.13.0
+
+- Project memory in git: `woolly init`. A repo's memory lives in `.woolly/woolly.md`, one fact per line under Overview, Stack, Conventions, Decisions, Gotchas and Commands, so every teammate's agent reads and updates the same notes. Edit the file by hand and Woolly picks it up. Facts with a key replace older ones, lines someone deleted are forgotten, and `.gitattributes` gets `merge=union` so adding facts at the same time doesn't conflict. Personal facts never go in the repo, and lines with secrets or instructions to an AI aren't loaded. See [Project memory](https://usewoolly.com/docs/project-memory).
+- Decisions are saved when a Claude Code session ends, in repos with `woolly.md`, using your local model. Turn it off with `woolly init --no-capture`.
+- `woolly init --export claude,agents` keeps a Project memory section in CLAUDE.md and AGENTS.md, between Woolly's markers, for tools without MCP.
+- `woolly project` shows the project's memory by heading, and `woolly project edit` opens it in your editor.
+- The MCP `remember` and `recall` tools take a `scope`: `personal`, `project` or `auto`. `remember` also takes a `section`. Auto picks personal when unsure, and Woolly refuses to put a fact that reads like it's about you in shared project memory.
+- Repos shared with `woolly share` move to `woolly.md` the first time they sync. `woolly share` still works and does the same as `woolly init`.
 
 - JavaScript and TypeScript package: `npm install woolly-ai`. Save, recall, learn and add memory to prompts from Node apps, plus `woollyMemory()` middleware for the Vercel AI SDK that adds the user's relevant memories to every call. See [JavaScript](https://usewoolly.com/docs/javascript).
 - A LOCOMO benchmark you can run on your own computer with Ollama: `python3 bench/locomo/run.py`. It reports answer accuracy and, separately, how often Woolly's search found the message with the answer. See [Benchmark](https://usewoolly.com/docs/benchmark).

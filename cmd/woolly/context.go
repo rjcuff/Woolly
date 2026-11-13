@@ -143,24 +143,16 @@ func projectName(dir string) string {
 	return memory.NormalizeProject(filepath.Base(dir))
 }
 
-// repoName is the name of the git repo holding dir, or "" outside one.
+// repoName is the project for dir: the name in the nearest .woolly/woolly.md,
+// or the git repo's folder name. It's "" outside a repo.
 func repoName(dir string) string {
 	if dir == "" || isHome(dir) {
 		return ""
 	}
-	for d := dir; ; {
-		if isHome(d) {
-			return ""
-		}
-		if _, err := os.Stat(filepath.Join(d, ".git")); err == nil {
-			return memory.NormalizeProject(filepath.Base(d))
-		}
-		parent := filepath.Dir(d)
-		if parent == d {
-			return ""
-		}
-		d = parent
+	if r := share.Find(dir); r != nil {
+		return r.Project
 	}
+	return ""
 }
 
 func isHome(dir string) bool {

@@ -21,7 +21,8 @@ description: Everything the woolly command can do.
 | `woolly sync` | Keep memories in step between your devices. See [Sync your devices](/docs/sync) |
 | `woolly handoff` | Where you left off in this project. See [Pick up where you left off](/docs/connect#pick-up-where-you-left-off) |
 | `woolly decide <choice>` | Save a decision, with `--why` and `--rejected "option: reason"`. See [Decisions](/docs/projects#decisions) |
-| `woolly share` | Share this repo's project memories with your team. See [Projects](/docs/projects#share-with-your-team) |
+| `woolly init` | Keep this repo's project memory in `.woolly/woolly.md`, shared with your team through git. `--export claude,agents` also keeps a section in CLAUDE.md and AGENTS.md. `--no-capture` stops saving decisions when a session ends. `--stop` removes it. See [Project memory](/docs/project-memory) |
+| `woolly project` | Show this repo's project memory by heading. `woolly project edit` opens it in your editor |
 | `woolly log` | What each app saved, read and deleted |
 | `woolly context` | Print your profile and notes about the current project, for an app to read at startup |
 | `woolly connect [app...]` | Add Woolly to your AI apps. See [Connect your apps](/docs/connect) |

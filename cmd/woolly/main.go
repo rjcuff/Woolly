@@ -67,7 +67,8 @@ Usage:
   woolly log [--app name] [-n 50]  what each app saved, read and deleted
   woolly context               print what Woolly knows, for an app to read at startup
   woolly handoff               where you left off in this project
-  woolly share [--agents-md]   share this repo's project memories with your team
+  woolly init [--export claude,agents] [--no-capture]  keep project memory in this repo for your team
+  woolly project [edit]        show or edit this repo's project memory
   woolly decide <choice> [--why ...] [--rejected "X: reason"]  save a decision
   woolly resolve <id>          keep this memory as the current fact for its key
   woolly ui                    open the review page in your browser
@@ -139,8 +140,10 @@ func run(args []string) error {
 		return cmdContext(rest)
 	case "handoff":
 		return cmdHandoff(rest)
-	case "share":
-		return cmdShare(rest)
+	case "init", "share":
+		return cmdInit(rest)
+	case "project":
+		return cmdProject(rest)
 	case "decide":
 		return cmdDecide(rest)
 	case "resolve":

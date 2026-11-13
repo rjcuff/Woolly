@@ -43,9 +43,9 @@ A week later, in Cursor, you ask for a weather script. Cursor calls `recall` wit
 
 | Tool | When the AI uses it |
 | --- | --- |
-| `recall` | To look up anything relevant to what you're working on |
+| `recall` | To look up anything relevant to what you're working on, in your memory and the project's |
 | `get_profile` | Once at the start of a conversation, for a summary of you |
-| `remember` | When you share a fact, preference or decision worth keeping |
+| `remember` | When you share a fact, preference or decision worth keeping. Its `scope` is `personal`, `project` or `auto`, so facts about the codebase go to [project memory](/docs/project-memory) and facts about you stay personal |
 | `list_memories` | When you ask what Woolly knows |
 | `forget` | Only when you ask it to delete something. The memory goes to the trash, so you can restore it |
 | `resolve_conflict` | Only when you confirm which version of a fact is right |

@@ -54,15 +54,10 @@ When a project note is saved in a git repo, Woolly records the commit. If a file
 ## Share with your team
 
 ```sh
-woolly share
+woolly init
 ```
 
-Run it inside a repo, then commit the new `.woolly/` folder. It holds the project's memories as plain files. When a teammate with Woolly works in the repo, their AI tools start with the same notes, and new project notes they save land in the folder too. No cloud, no account.
-
-- Only notes about this project are written to the repo. Facts about you and handoff notes never are.
-- Notes from a repo are checked like anything an app saves: passwords, keys and text that reads like instructions to an AI are skipped.
-- `woolly share --agents-md` also keeps a short Project notes section in `AGENTS.md`, so tools that read it without MCP, like Codex and Copilot, get the notes too.
-- `woolly share --stop` removes `.woolly/` and the `AGENTS.md` section. Memories on your computer stay.
+Run it inside a repo and commit `.woolly/`. The project's memory then lives in `.woolly/woolly.md`, one fact per line, and every teammate's AI tools read and update it. Only notes about the project go there, never anything about you. See [Project memory](/docs/project-memory).
 
 ## Set the project yourself
 

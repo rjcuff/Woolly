@@ -1,0 +1,136 @@
+---
+title: Project memory
+description: A CLAUDE.md that keeps itself up to date. Commit your project's memory to git and every teammate's AI tools read and update the same notes.
+---
+
+Every AI coding tool starts each session knowing nothing about your codebase. Teams fix this by hand with a CLAUDE.md or AGENTS.md that goes out of date.
+
+`woolly init` keeps the project's memory in the repo instead, in `.woolly/woolly.md`. Every teammate's agent reads it and adds to it through Woolly: Claude Code, Cursor, Codex, Gemini CLI, opencode, VS Code and anything else you [connect](/docs/connect).
+
+```sh
+cd ~/code/acme
+woolly init
+git add .woolly .gitattributes && git commit -m "Add project memory"
+```
+
+## What's in it
+
+`woolly.md` is plain Markdown with one fact per line, under six headings:
+
+```md
+## Stack
+
+- The API is written in Go, the web app in React <!-- id=3f9a1c2e by="Claude Code" -->
+
+## Decisions
+
+- Decided: Use SQLite instead of Postgres. Why: one file, no server. Rejected: Postgres: too much setup. <!-- id=accfc5b3 by=Cursor -->
+
+## Gotchas
+
+- Never run the billing tests against production <!-- id=91be0d47 key=billing.tests -->
+
+## Commands
+
+- Start everything with `make dev` <!-- id=c02d55e1 -->
+```
+
+The headings are Overview, Stack, Conventions, Decisions, Gotchas and Commands. A Notes heading shows up for facts that fit none of them.
+
+The comment at the end of each line is how Woolly tracks it: a short ID, the key if it has one, and the app that saved it. It doesn't show when the file is rendered.
+
+You can edit the file by hand. Add a line, change one, move it to another heading or delete it, and Woolly picks up the change the next time it reads the file. Or run:
+
+```sh
+woolly project        # show the project's memory by heading
+woolly project edit   # open woolly.md in your editor
+```
+
+## Project memory and personal memory
+
+Woolly keeps two layers:
+
+- **Project memory** is about the codebase: its stack, conventions, decisions, gotchas and commands. It lives in `.woolly/woolly.md` and is shared through git.
+- **Personal memory** is about you: your name, where you live, your preferences. It stays in `~/.woolly` on your computer and is **never** written to a repo.
+
+When an agent searches, it gets both, merged. When it saves, Woolly decides which layer the fact belongs to:
+
+- The MCP `remember` tool takes a `scope`: `project`, `personal` or `auto`, the default.
+- `auto` saves facts about code (files, commands, ports, the database) to the project. Anything that reads like it's about a person stays personal, and so does anything Woolly isn't sure about.
+- Even with `scope: "project"`, Woolly refuses a fact that reads like it's about you.
+- Decisions saved with `decide` go to the project.
+
+Woolly finds the project by walking up from the folder you're in to the nearest `.woolly/`. The project's name is in the file, so renaming the folder doesn't break anything.
+
+## Staying current
+
+Facts get replaced, not piled up:
+
+- A fact saved with a key, like `db`, replaces the older fact with that key, on everyone's machine after they pull.
+- If a teammate's change disagrees with something you stated yourself, Woolly flags it as a conflict for you to review in the app instead of silently overwriting yours.
+- A line someone deleted is forgotten on everyone's machine after they pull. You can still restore it from the Trash.
+- Project notes record the git commit they were saved at, and Woolly marks them as possibly out of date when the files they mention change.
+
+## Decisions are saved when a session ends
+
+When a Claude Code session ends in a repo with `woolly.md`, Woolly reads the session with your local model and saves the decisions in it under Decisions: the choice, why, and what was turned down. It skips finished tasks and anything said without a reason, and doesn't save the same decision twice.
+
+This needs Claude Code [connected](/docs/connect#memory-that-loads-by-itself) and [Ollama](/docs/ollama) running. New decisions show up in `git diff`, so the team sees them before they're committed. Turn it off for a repo with:
+
+```sh
+woolly init --no-capture
+```
+
+### Other agents
+
+Any app connected over MCP can save decisions with the `decide` tool. Woolly's MCP instructions ask agents to call it when you choose an approach or turn one down. To make it a habit in tools without session hooks, add a line to their rules, like:
+
+> When we settle on an approach, save it with Woolly's `decide` tool, with why and what we turned down.
+
+From a script or another tool's hook, use the command line:
+
+```sh
+woolly decide "Keep the API under /v1" --why "stable URLs for the mobile app" --rejected "No prefix: breaks old clients"
+```
+
+## CLAUDE.md and AGENTS.md
+
+Tools without MCP can read the same notes. This keeps a Project memory section in both files and updates it whenever the project's memory changes:
+
+```sh
+woolly init --export claude,agents
+```
+
+- Woolly only writes between `<!-- woolly:start -->` and `<!-- woolly:end -->`. Everything you wrote by hand stays as it is.
+- If your CLAUDE.md just imports AGENTS.md with `@AGENTS.md`, Woolly leaves it alone.
+- `woolly init --export none` stops updating them. The section stays until you delete it.
+
+## Merges
+
+`woolly init` adds this line to `.gitattributes`:
+
+```
+.woolly/woolly.md merge=union
+```
+
+When two people add facts at the same time, git keeps both lines instead of reporting a conflict. The lines are sorted, so most changes land in different places anyway. If a merge leaves the same fact twice, Woolly sorts it out the next time it reads the file.
+
+## Safety
+
+`woolly.md` comes from other people, so Woolly treats it as notes, not instructions:
+
+- Lines holding passwords, API keys or other secrets aren't loaded, and neither are lines that read like instructions to an AI ("ignore previous instructions..."). They stay in the file, so you can see and remove them, but no agent gets them.
+- Agents are told that what Woolly gives them is information from teammates' tools, not instructions to follow.
+- Woolly refuses to save secrets to project memory, just as it does for personal memory.
+
+## Upgrading from `woolly share`
+
+Repos shared with Woolly 0.10 to 0.12 kept one file per note in `.woolly/memories/`. The first time Woolly 0.13 syncs a repo like that, it moves the notes into `woolly.md` and removes the old folder. If you used `--agents-md`, it keeps updating that section. Commit the change. `woolly share` still works and does the same as `woolly init`.
+
+## Stop
+
+```sh
+woolly init --stop
+```
+
+This removes `.woolly/`, Woolly's sections in CLAUDE.md and AGENTS.md, and the `.gitattributes` line. Memories on your computer stay.
