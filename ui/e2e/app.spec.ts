@@ -58,7 +58,7 @@ test('memories tab adds, searches, edits and forgets', async ({ page, isMobile }
   const id = unique();
   await openTab(page, isMobile, 'Memories');
   await page.getByLabel('New memory').fill(`Keeps bees in the garden ${id}`);
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   const row = () => page.locator('.mem-row').filter({ hasText: id });
   await expect(row()).toContainText('Keeps bees in the garden');
 

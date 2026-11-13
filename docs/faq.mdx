@@ -45,6 +45,8 @@ irm https://usewoolly.com/install.ps1 | iex
 
 Your memories are not touched.
 
+Using the Mac or Windows app? [Download it again](/download) and install it over the old one.
+
 ## Which apps work with Woolly?
 
 Any app that supports MCP, including Claude Code, Claude Desktop, Cursor, VS Code and Windsurf. Run `woolly connect` to set them all up at once. See [Connect your apps](/docs/connect).
@@ -120,7 +122,13 @@ rm -rf ~/.woolly
 
 ## How do I uninstall Woolly?
 
-Delete the program, then delete your memories if you want them gone too:
+First remove Woolly from the AI apps you connected it to:
+
+```sh
+woolly disconnect
+```
+
+Then delete the program, and your memories if you want them gone too:
 
 ```sh
 sudo rm /usr/local/bin/woolly
@@ -129,7 +137,7 @@ rm -rf ~/.woolly
 
 On Windows, delete `%LOCALAPPDATA%\Programs\woolly` and the `.woolly` folder in your user folder.
 
-Remember to remove Woolly from any AI app you connected it to.
+For the Mac app, drag Woolly from Applications to the Trash. For the Windows app, open Settings, then Apps, and uninstall Woolly.
 
 ## Is Woolly free?
 

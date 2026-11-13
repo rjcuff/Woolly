@@ -25,7 +25,15 @@ git push origin main "$tag"
 body=$(python3 -c '
 import json, sys
 v = sys.argv[1]
-notes = f"Woolly {v}\n\n```sh\ncurl -fsSL https://usewoolly.com/install.sh | sh\n```\n\nDocs: https://usewoolly.com/docs"
+dl = f"https://github.com/rjcuff/woolly/releases/download/v{v}"
+notes = (
+    f"Woolly {v}\n\n**Desktop apps**\n"
+    f"- [Download for Mac]({dl}/Woolly-mac.dmg) (Apple Silicon and Intel, macOS 11 or later)\n"
+    f"- [Download for Windows]({dl}/Woolly-windows.exe) (Windows 10 or later)\n\n"
+    "**Command line**\n\n```sh\ncurl -fsSL https://usewoolly.com/install.sh | sh\n```\n\n"
+    "On Windows, in PowerShell:\n\n```powershell\nirm https://usewoolly.com/install.ps1 | iex\n```\n\n"
+    "Changes: https://github.com/rjcuff/woolly/blob/main/CHANGELOG.md\n\nDocs: https://usewoolly.com/docs"
+)
 print(json.dumps({"tag_name": "v" + v, "name": "v" + v, "body": notes, "draft": False, "prerelease": False, "make_latest": "true"}))
 ' "$version")
 

@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -24,8 +25,9 @@ func setup(t *testing.T) (http.Handler, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Windows has no Unix file modes, so only check them elsewhere.
 	info, _ := os.Stat(filepath.Join(home, "token"))
-	if info.Mode().Perm() != 0o600 {
+	if runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
 		t.Fatalf("token file mode %v, want 0600", info.Mode().Perm())
 	}
 	return Handler(store, recall.New(store, nil, ""), "test", token, Options{Activity: activity.Open(home)}), token

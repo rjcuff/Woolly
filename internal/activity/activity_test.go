@@ -27,7 +27,7 @@ func TestAddAndRecent(t *testing.T) {
 		t.Fatal("limit not applied")
 	}
 	st, _ := os.Stat(filepath.Join(home, "activity.log"))
-	if st.Mode().Perm() != 0o600 {
+	if st.Mode().Perm() != 0o600 && os.PathSeparator == '/' {
 		t.Fatalf("log should be private, got %v", st.Mode().Perm())
 	}
 }

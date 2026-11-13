@@ -1,12 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.13.1
 
 - A Windows app. [Download Woolly-windows.exe](https://github.com/rjcuff/woolly/releases/latest/download/Woolly-windows.exe), run it, and Woolly starts in the background with an icon in the system tray. It has the same screens as the Mac app and installs for your account without admin rights. It isn't signed yet, so SmartScreen may ask you to choose More info, then Run anyway.
 - The website offers Download for Mac or Download for Windows, depending on your computer.
-
-## 0.13.1
-
 - Fixed `woolly project edit`, which listed the project memory instead of opening your editor. On Windows it opens Notepad when `EDITOR` isn't set.
 - Handoff notes are more accurate: finished work no longer shows up as a decision, and a next step or task the conversation doesn't back up is left out.
 - `woolly doctor` shows the repo's project memory and whether decisions will be saved when a session ends.

@@ -82,7 +82,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
       nav={{ ...baseOptions().nav, mode: 'top' }}
       links={[
         { text: 'Home', url: '/', active: 'none' },
-        { text: 'Download', url: '/docs/quickstart', active: 'none' },
+        { text: 'Download', url: '/download', active: 'none' },
       ]}
       tree={pageTree}
     >

@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -105,7 +106,8 @@ func TestDownloadAndReplace(t *testing.T) {
 	}
 	got, _ := os.ReadFile(exe)
 	info, _ := os.Stat(exe)
-	if string(got) != "new binary" || info.Mode().Perm() != 0o755 {
+	// Windows has no Unix file modes, so only check them elsewhere.
+	if string(got) != "new binary" || (runtime.GOOS != "windows" && info.Mode().Perm() != 0o755) {
 		t.Fatalf("replaced: %q %v", got, info.Mode())
 	}
 }

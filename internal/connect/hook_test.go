@@ -41,7 +41,7 @@ func TestStartupHookAddAndRemove(t *testing.T) {
 			t.Fatalf("missing %s in\n%s", want, data)
 		}
 	}
-	if st, _ := os.Stat(path); st.Mode().Perm() != 0o600 {
+	if st, _ := os.Stat(path); st.Mode().Perm() != 0o600 && os.PathSeparator == '/' {
 		t.Fatalf("mode changed to %v", st.Mode().Perm())
 	}
 	if res, _ := AddStartupHook(path, "/usr/local/bin/woolly", false); res != Unchanged {

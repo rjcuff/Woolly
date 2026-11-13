@@ -14,13 +14,16 @@ test('page has its own title and description', async ({ page }) => {
 });
 
 test('search finds pages', async ({ page, isMobile }) => {
-  if (isMobile) {
-    await page.getByRole('button', { name: 'Open Search' }).first().click();
-  } else {
-    await page.keyboard.press('ControlOrMeta+k');
-  }
   const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
+  // Keep trying until the page has loaded its scripts and the shortcut works.
+  await expect(async () => {
+    if (isMobile) {
+      await page.getByRole('button', { name: 'Open Search' }).first().click();
+    } else {
+      await page.keyboard.press('ControlOrMeta+k');
+    }
+    await expect(dialog).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
   await dialog.locator('input').first().fill('ollama');
   // The search index loads on first use, which can be slow when many tests run at once.
   await expect(dialog).toContainText('Using Ollama', { timeout: 15_000 });
