@@ -92,6 +92,9 @@ Connect your AI apps:  woolly connect
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return // the help was printed
+		}
 		fmt.Fprintln(os.Stderr, "woolly:", err)
 		os.Exit(1)
 	}
@@ -167,7 +170,46 @@ func run(args []string) error {
 	case "service":
 		return cmdService(rest)
 	}
+	if near := closest(cmd); near != "" {
+		return fmt.Errorf("unknown command %q. Did you mean woolly %s?", cmd, near)
+	}
 	return fmt.Errorf("unknown command %q (run 'woolly help')", cmd)
+}
+
+var commands = []string{"remember", "recall", "list", "show", "forget", "import", "profile", "restore", "trash",
+	"conflicts", "learn", "sync", "log", "context", "handoff", "init", "project", "decide", "resolve", "ui",
+	"serve", "mcp", "proxy", "doctor", "update", "connect", "disconnect", "service", "version", "help"}
+
+// closest is the command a typo was probably meant to be, or "".
+func closest(typo string) string {
+	best, bestD := "", 3
+	for _, c := range commands {
+		if d := distance(typo, c); d < bestD {
+			best, bestD = c, d
+		}
+	}
+	return best
+}
+
+// distance counts the letters you'd add, remove or change to turn a into b.
+func distance(a, b string) int {
+	prev := make([]int, len(b)+1)
+	for j := range prev {
+		prev[j] = j
+	}
+	for i := 1; i <= len(a); i++ {
+		cur := make([]int, len(b)+1)
+		cur[0] = i
+		for j := 1; j <= len(b); j++ {
+			cost := 1
+			if a[i-1] == b[j-1] {
+				cost = 0
+			}
+			cur[j] = min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost)
+		}
+		prev = cur
+	}
+	return prev[len(b)]
 }
 
 // home returns Woolly's data directory.
@@ -239,6 +281,27 @@ func parse(fs *flag.FlagSet, args []string) ([]string, error) {
 func newFlags(name string) *flag.FlagSet {
 	fs := flag.NewFlagSet("woolly "+name, flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: woolly %s [options]\n", name)
+		first := true
+		fs.VisitAll(func(f *flag.Flag) {
+			if first {
+				fmt.Fprintln(os.Stderr, "\nOptions:")
+				first = false
+			}
+			arg, usage := flag.UnquoteUsage(f)
+			opt := "  --" + f.Name
+			if arg != "" {
+				opt += " " + arg
+			}
+			if len(opt) > 24 {
+				fmt.Fprintf(os.Stderr, "%s\n%26s%s\n", opt, "", usage)
+			} else {
+				fmt.Fprintf(os.Stderr, "%-26s%s\n", opt, usage)
+			}
+		})
+		fmt.Fprintln(os.Stderr, "\nDocs: https://usewoolly.com/docs/cli")
+	}
 	return fs
 }
 
@@ -863,6 +926,36 @@ func cmdDoctor(args []string) error {
 		fmt.Printf("  woolly learn: ready (%s)\n", a.ollama.ChatModel)
 	} else if err == nil {
 		fmt.Printf("  woolly learn: off (run: ollama pull %s)\n", a.ollama.ChatModel)
+	}
+
+	if cwd, err := os.Getwd(); err == nil {
+		if r := share.Find(cwd); r != nil {
+			fmt.Println("\nProject memory")
+			if !r.Enabled() {
+				fmt.Printf("  off in %s (share it with your team: woolly init)\n", r.Project)
+			} else {
+				n := 0
+				for _, m := range all {
+					if m.Project == r.Project && m.Status == memory.StatusActive && m.Key != "handoff" {
+						n++
+					}
+				}
+				fmt.Printf("  %s: %s in %s\n", r.Project, plural(n, "note", "notes"), r.File())
+				h, _ := os.UserHomeDir()
+				hook := connect.HasStartupHook(connect.ClaudeSettings(h))
+				model, _ := a.ollama.HasModel(ctx, a.ollama.ChatModel)
+				switch {
+				case !r.Config().Capture:
+					fmt.Println("  saving decisions when a session ends: off")
+				case hook && model:
+					fmt.Println("  saving decisions when a Claude Code session ends: on")
+				case !hook:
+					fmt.Println("  saving decisions when a session ends: needs Claude Code connected (woolly connect claude-code)")
+				default:
+					fmt.Println("  saving decisions when a session ends: needs Ollama with " + a.ollama.ChatModel + " (ollama pull " + a.ollama.ChatModel + ")")
+				}
+			}
+		}
 	}
 
 	fmt.Println("\nSync")

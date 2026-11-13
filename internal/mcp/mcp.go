@@ -362,7 +362,11 @@ func (s *Server) callTool(ctx context.Context, name string, raw json.RawMessage)
 		}
 		var b strings.Builder
 		b.WriteString(notesHeader)
-		fmt.Fprintf(&b, "%d memories:\n", len(results))
+		if len(results) == 1 {
+			b.WriteString("1 memory:\n")
+		} else {
+			fmt.Fprintf(&b, "%d memories:\n", len(results))
+		}
 		for _, r := range results {
 			b.WriteString(Line(r.Memory) + "\n")
 		}

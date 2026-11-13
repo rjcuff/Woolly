@@ -68,4 +68,4 @@ case ":$PATH:" in
     echo "  echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> ~/.zshrc && source ~/.zshrc"
     ;;
 esac
-echo "Next: woolly remember \"I prefer dark mode\""
+echo "Next: woolly connect   (adds Woolly to Claude Code, Cursor, VS Code and your other AI apps)"

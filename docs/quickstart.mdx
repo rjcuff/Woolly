@@ -46,6 +46,7 @@ Check that it worked:
 ```sh
 woolly version
 ```
+
 ## Save a memory
 
 ```sh
@@ -53,6 +54,7 @@ woolly remember "I prefer tabs over spaces" --key code.indent
 ```
 
 The `--key` names the fact. Use one for anything that can change, like where you live or which database a project uses.
+
 ## Get it back
 
 ```sh
@@ -60,8 +62,11 @@ woolly recall "tabs or spaces"
 ```
 
 ```txt
-1.05  [20261110-150029-92f9ddf6] I prefer tabs over spaces (key: code.indent; source: user)
+1.05  [20261110-150029-92f9ddf6] I prefer tabs over spaces (key: code.indent; source: user; 2026-11-10)
+(keyword search; run 'woolly doctor' to enable semantic search)
 ```
+
+With [Ollama](/docs/ollama) running, Woolly also searches by meaning, so "what indentation do I like" finds it too.
 ## Connect your AI
 
 ```sh
@@ -69,6 +74,16 @@ woolly connect
 ```
 
 This adds Woolly to Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Codex, Gemini CLI, LM Studio and opencode, whichever you have. Now they can remember and recall on their own. See [Connect your apps](/docs/connect).
+
+## Share project memory with your team
+
+In a git repo:
+
+```sh
+woolly init
+```
+
+Commit `.woolly/`, and every teammate's AI tools read and update the same notes about the project. See [Project memory](/docs/project-memory).
 
 ## Keep it running
 

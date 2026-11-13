@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/rjcuff/woolly/internal/memory"
@@ -91,6 +92,16 @@ func cmdInit(args []string) error {
 	return nil
 }
 
+func plural(n int, one, many string) string {
+	if n == 1 {
+		if strings.HasPrefix(one, "One") {
+			return one
+		}
+		return "1 " + one
+	}
+	return fmt.Sprintf("%d %s", n, many)
+}
+
 func exportFiles(list []string) string {
 	var out []string
 	for _, e := range list {
@@ -102,8 +113,16 @@ func exportFiles(list []string) string {
 // cmdProject shows this repo's project memory, or opens it to edit.
 func cmdProject(args []string) error {
 	fs := newFlags("project")
-	if _, err := parse(fs, args); err != nil {
+	pos, err := parse(fs, args)
+	if err != nil {
 		return err
+	}
+	sub := ""
+	if len(pos) > 0 {
+		sub = pos[0]
+	}
+	if sub != "" && sub != "edit" {
+		return fmt.Errorf("unknown: woolly project %s (try woolly project or woolly project edit)", sub)
 	}
 	cwd, _ := os.Getwd()
 	r := share.Find(cwd)
@@ -118,32 +137,46 @@ func cmdProject(args []string) error {
 		return err
 	}
 
-	if fs.NArg() > 0 && fs.Arg(0) == "edit" {
+	if sub == "edit" {
 		editor := os.Getenv("VISUAL")
 		if editor == "" {
 			editor = os.Getenv("EDITOR")
 		}
 		if editor == "" {
 			editor = "vi"
+			if runtime.GOOS == "windows" {
+				editor = "notepad"
+			}
 		}
 		parts := strings.Fields(editor)
 		cmd := exec.Command(parts[0], append(parts[1:], r.File())...)
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		if err := cmd.Run(); err != nil {
-			return err
+			return fmt.Errorf("%s didn't finish (%v), so nothing was saved. Set EDITOR to change the editor", parts[0], err)
 		}
 		res, err := r.Sync(a.store)
 		if err != nil {
 			return err
 		}
-		if d := res.Describe(); d != "" {
-			fmt.Println("Saved: " + d + ".")
-		} else {
+		switch {
+		case res.Imported+res.Removed == 0 && res.Skipped == 0:
 			fmt.Println("No changes.")
+		default:
+			var done []string
+			if res.Imported > 0 {
+				done = append(done, plural(res.Imported, "note added or changed", "notes added or changed"))
+			}
+			if res.Removed > 0 {
+				done = append(done, plural(res.Removed, "removed", "removed"))
+			}
+			if len(done) > 0 {
+				fmt.Println("Saved: " + strings.Join(done, ", ") + ".")
+			}
+			if res.Skipped > 0 {
+				fmt.Printf("%s held a secret or read like instructions to an AI, so agents won't see it.\n", plural(res.Skipped, "One line", "lines"))
+			}
 		}
 		return nil
-	} else if fs.NArg() > 0 {
-		return fmt.Errorf("unknown: woolly project %s (try woolly project or woolly project edit)", fs.Arg(0))
 	}
 
 	mems, err := a.store.List(false)

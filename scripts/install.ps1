@@ -47,4 +47,4 @@ if (($userPath -split ';') -notcontains $installDir) {
 
 $version = & (Join-Path $installDir 'woolly.exe') version
 Write-Host "Installed: $version"
-Write-Host 'Next: woolly remember "I prefer dark mode"'
+Write-Host 'Next: woolly connect   (adds Woolly to Claude Code, Cursor, VS Code and your other AI apps)'

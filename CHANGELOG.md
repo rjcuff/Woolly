@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Fixed `woolly project edit`, which listed the project memory instead of opening your editor. On Windows it opens Notepad when `EDITOR` isn't set.
+- Handoff notes are more accurate: finished work no longer shows up as a decision, and a next step or task the conversation doesn't back up is left out.
+- `woolly doctor` shows the repo's project memory and whether decisions will be saved when a session ends.
+- `--help` lists options the way the docs write them, like `--key`, and no longer ends with an error. A mistyped command suggests the right one.
+- The install script points you to `woolly connect` next.
+
 ## 0.13.0
 
 - Project memory in git: `woolly init`. A repo's memory lives in `.woolly/woolly.md`, one fact per line under Overview, Stack, Conventions, Decisions, Gotchas and Commands, so every teammate's agent reads and updates the same notes. Edit the file by hand and Woolly picks it up. Facts with a key replace older ones, lines someone deleted are forgotten, and `.gitattributes` gets `merge=union` so adding facts at the same time doesn't conflict. Personal facts never go in the repo, and lines with secrets or instructions to an AI aren't loaded. See [Project memory](https://usewoolly.com/docs/project-memory).
