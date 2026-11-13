@@ -1,28 +1,28 @@
 class Woolly < Formula
   desc "Local memory for your AI tools"
   homepage "https://usewoolly.com"
-  version "0.13.0"
+  version "0.13.1"
   license "MIT"
 
   on_macos do
     on_arm do
-      url "https://github.com/rjcuff/woolly/releases/download/v0.13.0/woolly_darwin_arm64.tar.gz"
-      sha256 "525a9639045f4eaa656c81564d735ac397085ddc37b034871fac3e9b9ab139af"
+      url "https://github.com/rjcuff/woolly/releases/download/v0.13.1/woolly_darwin_arm64.tar.gz"
+      sha256 "9bd4242ae34f44eff834454b427684d21a365bda42c5a510d1fd157a52373ce3"
     end
     on_intel do
-      url "https://github.com/rjcuff/woolly/releases/download/v0.13.0/woolly_darwin_amd64.tar.gz"
-      sha256 "a0675b3a79dc0066c3fe23fdac555d7312ee8f330279318f24473c1eb1215ec0"
+      url "https://github.com/rjcuff/woolly/releases/download/v0.13.1/woolly_darwin_amd64.tar.gz"
+      sha256 "b1d559a4e6c690c2ac11e1bb513bcfe64669f2db0fd9a2554be823d96a99722a"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/rjcuff/woolly/releases/download/v0.13.0/woolly_linux_arm64.tar.gz"
-      sha256 "c280b969ca2c85d2f21cb1b16fa2d0e80d1c2e102560ffe2bd9ba684eacee571"
+      url "https://github.com/rjcuff/woolly/releases/download/v0.13.1/woolly_linux_arm64.tar.gz"
+      sha256 "15f445193eb504190b3038356c11a504251e4e2e9e863fe73e18cecacf74e1f3"
     end
     on_intel do
-      url "https://github.com/rjcuff/woolly/releases/download/v0.13.0/woolly_linux_amd64.tar.gz"
-      sha256 "b8be25ba4660d0fd63f88df5a4756e523ef706edcc4649f86101fb40f5e37e6d"
+      url "https://github.com/rjcuff/woolly/releases/download/v0.13.1/woolly_linux_amd64.tar.gz"
+      sha256 "3bd43d8f67f9943bf7cc112c75f9af7f3ce8faf4ebd27755645740ea5e2676f2"
     end
   end
 
