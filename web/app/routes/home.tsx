@@ -33,10 +33,10 @@ const macDownload = 'https://github.com/rjcuff/woolly/releases/latest/download/W
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="flex h-dvh flex-col overflow-hidden px-[max(20px,env(safe-area-inset-left))]">
+    <div className="flex min-h-dvh flex-col px-[max(20px,env(safe-area-inset-left))] sm:h-dvh sm:overflow-hidden">
       <SiteHeader stars={loaderData?.stars} />
 
-      <main className="flex flex-1 items-center justify-center pb-[6vh]">
+      <main className="flex flex-1 items-center justify-center pt-24 pb-16 sm:pt-0 sm:pb-[6vh]">
         <section className="flex w-full max-w-[640px] flex-col items-start gap-6">
           <a href={productHuntUrl} target="_blank" rel="noopener noreferrer" className="-mb-1 block transition-opacity hover:opacity-85">
             <img
