@@ -23,7 +23,7 @@ export function SiteHeader({ stars }: { stars?: number | null }) {
             <span className="max-sm:hidden">GitHub</span>
           )}
         </a>
-        <Link to="/docs/quickstart" className="hover:text-fd-muted-foreground">
+        <Link to="/download" className="hover:text-fd-muted-foreground">
           Download
         </Link>
         <Link to="/docs" className="hover:text-fd-muted-foreground">

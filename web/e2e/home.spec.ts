@@ -54,3 +54,14 @@ test('integration logos name their app on hover', async ({ page }) => {
   await page.getByRole('link', { name: 'Ollama' }).hover();
   await expect(page.getByRole('tooltip', { name: 'Ollama' })).toBeVisible();
 });
+
+test('download page offers the Mac app and install commands', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Download', exact: true }).click();
+  await expect(page).toHaveURL(/\/download$/);
+  await page.getByRole('tab', { name: 'macOS' }).click();
+  await expect(page.getByRole('link', { name: 'Download for Mac' })).toHaveAttribute('href', /Woolly-mac\.dmg$/);
+  await page.getByRole('tab', { name: 'Windows' }).click();
+  await expect(page.getByText('irm https://usewoolly.com/install.ps1 | iex')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+});
