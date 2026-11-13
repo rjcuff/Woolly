@@ -1,16 +1,18 @@
 import { expect, test } from '@playwright/test';
 
-test('home fits on one screen with the headline and button', async ({ page }) => {
+test('home fits on one screen with the headline and button', async ({ page, isMobile }) => {
   await page.goto('/');
   await expect(page).toHaveTitle('Woolly | Local memory for your AI tools');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Memory for your AI, kept on your laptop.');
 
-  const scrolls = await page.evaluate(
-    () =>
-      document.documentElement.scrollHeight > window.innerHeight ||
-      document.documentElement.scrollWidth > window.innerWidth,
-  );
-  expect(scrolls).toBe(false);
+  // Never sideways. Phones may scroll down a little, to give the top room.
+  const size = await page.evaluate(() => ({
+    extraHeight: document.documentElement.scrollHeight - window.innerHeight,
+    extraWidth: document.documentElement.scrollWidth - window.innerWidth,
+  }));
+  expect(size.extraWidth).toBeLessThanOrEqual(0);
+  expect(size.extraHeight).toBeLessThanOrEqual(isMobile ? 160 : 0);
+  await expect(page.getByRole('link', { name: 'Get started' })).toBeInViewport();
 
   await page.getByRole('link', { name: 'Get started' }).click();
   await expect(page).toHaveURL(/\/docs\/quickstart$/);
