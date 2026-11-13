@@ -39,6 +39,7 @@ for f in dist/*; do
   case "$name" in
     *.zip | *.mcpb) type=application/zip ;;
     *.dmg) type=application/x-apple-diskimage ;;
+    *.exe) type=application/vnd.microsoft.portable-executable ;;
     *.txt) type=text/plain ;;
     *) type=application/gzip ;;
   esac

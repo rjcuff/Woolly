@@ -41,10 +41,14 @@ release: check
 
 # make publish VERSION=0.1.1  (tests, builds, tags, pushes and uploads the release)
 # On a Mac it also builds, signs and notarizes the Mac app and attaches it.
+# On Windows it builds the Windows app installer and attaches it.
 publish: release
 	if [ "$$(uname -s)" = Darwin ]; then \
 		scripts/app.sh $(VERSION) && cp dist-app/Woolly-mac.dmg dist/ && (cd dist && shasum -a 256 Woolly-mac.dmg >> checksums.txt); \
 	fi
+	case "$$(uname -s)" in MINGW* | MSYS* | CYGWIN*) \
+		scripts/app.sh $(VERSION) && cp dist-app/Woolly-windows.exe dist/ && (cd dist && shasum -a 256 Woolly-windows.exe >> checksums.txt) ;; \
+	esac
 	scripts/publish.sh $(VERSION)
 
 # Records docs/demo.gif from real woolly output.

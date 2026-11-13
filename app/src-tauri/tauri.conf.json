@@ -14,7 +14,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg"],
+    "targets": ["app", "dmg", "nsis"],
     "category": "Productivity",
     "shortDescription": "Local memory for your AI tools",
     "copyright": "© 2026 Woolly",
@@ -28,6 +28,12 @@
     ],
     "macOS": {
       "minimumSystemVersion": "11.0"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico"
+      }
     }
   }
 }

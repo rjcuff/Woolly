@@ -57,13 +57,32 @@ test('integration logos name their app on hover', async ({ page }) => {
   await expect(page.getByRole('tooltip', { name: 'Ollama' })).toBeVisible();
 });
 
-test('download page offers the Mac app and install commands', async ({ page }) => {
+test('download page offers the Mac and Windows apps and install commands', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Download', exact: true }).click();
   await expect(page).toHaveURL(/\/download$/);
   await page.getByRole('tab', { name: 'macOS' }).click();
   await expect(page.getByRole('link', { name: 'Download for Mac' })).toHaveAttribute('href', /Woolly-mac\.dmg$/);
   await page.getByRole('tab', { name: 'Windows' }).click();
+  await expect(page.getByRole('link', { name: 'Download for Windows' })).toHaveAttribute('href', /Woolly-windows\.exe$/);
   await expect(page.getByText('irm https://usewoolly.com/install.ps1 | iex')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+});
+
+test.describe('on Windows', () => {
+  test.use({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36' });
+
+  test('home page offers the Windows app', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'Download for Windows' })).toHaveAttribute('href', /Woolly-windows\.exe$/);
+  });
+});
+
+test.describe('on a Mac', () => {
+  test.use({ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15' });
+
+  test('home page offers the Mac app', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'Download for Mac' })).toHaveAttribute('href', /Woolly-mac\.dmg$/);
+  });
 });

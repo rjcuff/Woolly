@@ -2,7 +2,8 @@
 # Builds the Woolly desktop app into app/src-tauri/target. On a Mac it builds
 # one app for both Apple Silicon and Intel, and when a Developer ID
 # certificate and a notarytool profile named "woolly" are set up, it signs
-# and notarizes it and writes dist-app/Woolly-mac.dmg.
+# and notarizes it and writes dist-app/Woolly-mac.dmg. On Windows it writes
+# the installer to dist-app/Woolly-windows.exe.
 #   scripts/app.sh 0.10.0
 set -eu
 
@@ -40,6 +41,14 @@ fi
 
 (cd app && { [ -d node_modules ] || npm install --no-audit --no-fund; } && npx tauri build $target)
 
+case "$(uname -s)" in
+  MINGW* | MSYS* | CYGWIN*)
+    mkdir -p dist-app
+    setup=$(ls app/src-tauri/target/release/bundle/nsis/Woolly_*_x64-setup.exe | tail -1)
+    cp "$setup" dist-app/Woolly-windows.exe
+    echo "Built dist-app/Woolly-windows.exe"
+    exit 0 ;;
+esac
 [ "$(uname -s)" = Darwin ] || exit 0
 app=app/src-tauri/target/universal-apple-darwin/release/bundle/macos/Woolly.app
 out=dist-app

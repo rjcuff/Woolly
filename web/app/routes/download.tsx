@@ -1,6 +1,7 @@
 import type { Route } from './+types/download';
 import { useEffect, useState } from 'react';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
+import { detectOS, macApp, windowsApp, type OS } from '@/lib/download';
 import { getStars } from '@/lib/github';
 import { seo } from '@/lib/seo';
 
@@ -17,10 +18,6 @@ export async function loader() {
   return { stars: await getStars() };
 }
 
-type OS = 'mac' | 'windows' | 'linux';
-
-const macApp = 'https://github.com/rjcuff/woolly/releases/latest/download/Woolly-mac.dmg';
-
 const OSES: { id: OS; label: string }[] = [
   { id: 'mac', label: 'macOS' },
   { id: 'linux', label: 'Linux' },
@@ -33,18 +30,11 @@ const COMMANDS: Record<OS, string> = {
   windows: 'irm https://usewoolly.com/install.ps1 | iex',
 };
 
-function detect(): OS {
-  const ua = navigator.userAgent.toLowerCase();
-  if (ua.includes('windows')) return 'windows';
-  if (ua.includes('linux') && !ua.includes('android')) return 'linux';
-  return 'mac';
-}
-
 export default function Download({ loaderData }: Route.ComponentProps) {
   const [os, setOS] = useState<OS>('mac');
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => setOS(detect()), []);
+  useEffect(() => setOS(detectOS()), []);
 
   const copy = async () => {
     try {
@@ -92,9 +82,21 @@ export default function Download({ loaderData }: Route.ComponentProps) {
             </div>
           )}
 
+          {os === 'windows' && (
+            <div className="flex flex-col items-center gap-3">
+              <a
+                href={windowsApp}
+                className="rounded-full bg-fd-foreground px-8 py-4 text-[18px] font-medium text-fd-background transition-opacity hover:opacity-85"
+              >
+                Download for Windows
+              </a>
+              <p className="text-[14px] text-fd-muted-foreground">Windows 10 or later</p>
+            </div>
+          )}
+
           <div className="flex w-full flex-col gap-3">
             <p className="text-[15px] text-fd-muted-foreground">
-              {os === 'mac' ? 'Or install the command line tool:' : os === 'windows' ? 'Paste this in PowerShell:' : 'Paste this in a terminal:'}
+              {os === 'mac' ? 'Or install the command line tool:' : os === 'windows' ? 'Or install the command line tool in PowerShell:' : 'Paste this in a terminal:'}
             </p>
             <div className="flex items-center gap-2 rounded-2xl bg-black/[0.05] py-2 pr-2 pl-5 text-left dark:bg-white/10">
               <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-[14px]">{COMMANDS[os]}</code>
@@ -106,7 +108,6 @@ export default function Download({ loaderData }: Route.ComponentProps) {
               </button>
             </div>
             {os === 'linux' && <p className="text-[14px] text-fd-muted-foreground">Works on x86 and ARM, including Raspberry Pi.</p>}
-            {os === 'windows' && <p className="text-[14px] text-fd-muted-foreground">The Windows app is coming soon.</p>}
           </div>
 
           <p className="text-[14px] text-fd-muted-foreground">

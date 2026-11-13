@@ -1,4 +1,4 @@
-// The Woolly desktop app: a window and menu bar icon for the local Woolly
+// The Woolly desktop app: a window and menu bar (or tray) icon for the local Woolly
 // page. It starts `woolly serve` if nothing is running and stops it on quit.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -25,7 +25,9 @@ fn woolly_home() -> PathBuf {
             return PathBuf::from(h);
         }
     }
-    let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_default();
+    // Match Go's os.UserHomeDir, which the woolly program uses.
+    let vars = if cfg!(windows) { ["USERPROFILE", "HOME"] } else { ["HOME", "USERPROFILE"] };
+    let home = vars.iter().find_map(|v| std::env::var(v).ok().filter(|h| !h.is_empty())).unwrap_or_default();
     PathBuf::from(home).join(".woolly")
 }
 
@@ -45,7 +47,16 @@ fn start_server() -> Option<Child> {
     if running() {
         return None;
     }
-    Command::new(sidecar()).args(["serve", "--proxy"]).spawn().ok()
+    let mut cmd = Command::new(sidecar());
+    cmd.args(["serve", "--proxy"]);
+    #[cfg(windows)]
+    {
+        // Keep the server from opening a console window.
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    cmd.spawn().ok()
 }
 
 fn token() -> Option<String> {
@@ -109,8 +120,15 @@ fn main() {
             let quit = MenuItem::with_id(app, "quit", "Quit Woolly", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
             let menu = Menu::with_items(app, &[&open, &memories, &activity, &sep, &quit])?;
+            // macOS tints the black template icon to fit the menu bar. Windows
+            // shows icons as they are, so it gets the color one.
+            let tray_icon: &[u8] = if cfg!(target_os = "macos") {
+                include_bytes!("../icons/tray.png")
+            } else {
+                include_bytes!("../icons/32x32.png")
+            };
             TrayIconBuilder::with_id("woolly")
-                .icon(Image::from_bytes(include_bytes!("../icons/tray.png"))?)
+                .icon(Image::from_bytes(tray_icon)?)
                 .icon_as_template(true)
                 .tooltip("Woolly")
                 .menu(&menu)
@@ -125,7 +143,7 @@ fn main() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            // Closing the window keeps Woolly running in the menu bar.
+            // Closing the window keeps Woolly running in the menu bar or tray.
             if let WindowEvent::CloseRequested { api, .. } = event {
                 let _ = window.hide();
                 api.prevent_close();

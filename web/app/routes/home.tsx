@@ -1,6 +1,8 @@
 import type { Route } from './+types/home';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
+import { detectOS, macApp, windowsApp, type OS } from '@/lib/download';
 import { getStars } from '@/lib/github';
 import { integrations } from '@/lib/integrations';
 import { seo } from '@/lib/seo';
@@ -29,9 +31,18 @@ export async function loader() {
   return { stars: await getStars() };
 }
 
-const macDownload = 'https://github.com/rjcuff/woolly/releases/latest/download/Woolly-mac.dmg';
+// Linux has no app yet, so it goes to the download page for the install command.
+const DOWNLOADS: Record<OS, { href: string; label: string }> = {
+  mac: { href: macApp, label: 'Download for Mac' },
+  windows: { href: windowsApp, label: 'Download for Windows' },
+  linux: { href: '/download', label: 'Download for Linux' },
+};
 
 export default function Home({ loaderData }: Route.ComponentProps) {
+  const [os, setOS] = useState<OS>('mac');
+  useEffect(() => setOS(detectOS()), []);
+  const download = DOWNLOADS[os];
+
   return (
     <div className="flex min-h-dvh flex-col px-[max(20px,env(safe-area-inset-left))] sm:h-dvh sm:overflow-hidden">
       <SiteHeader stars={loaderData?.stars} />
@@ -69,10 +80,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               Get started
             </Link>
             <a
-              href={macDownload}
+              href={download.href}
               className="rounded-full px-6 py-4 text-[18px] font-medium shadow-[0_0_0_1px_var(--color-fd-border)] transition-colors hover:bg-fd-accent"
             >
-              Download for Mac
+              {download.label}
             </a>
           </div>
 
