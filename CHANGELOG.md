@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.13.1
 
 - Fixed `woolly project edit`, which listed the project memory instead of opening your editor. On Windows it opens Notepad when `EDITOR` isn't set.
 - Handoff notes are more accurate: finished work no longer shows up as a decision, and a next step or task the conversation doesn't back up is left out.
