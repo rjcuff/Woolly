@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.12.0
+
+- Import is smarter with Ollama. When the learning model is installed, Woolly has it read your recent messages about yourself and combines what it finds with the simple rules. In testing it found every fact in a sample export, up from about half.
 
 - Import from ChatGPT and Claude in the app. Drop your data export into Memories → Import, review the facts Woolly found, uncheck what you don't want, and save. It works out which app the export came from, marks what Woolly already knows, and labels imported memories with where they came from. Also in the API: `POST /api/import/preview` and `/api/import/save`.
 - Exports saved without a `.zip` name are now read as zips.

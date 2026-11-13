@@ -66,3 +66,9 @@ func TestImportPreviewFromZip(t *testing.T) {
 		t.Fatalf("zip preview: %d %s", rec.Code, rec.Body)
 	}
 }
+
+func TestSimilarFacts(t *testing.T) {
+	if !similar("I live in Denver", "Lives in Denver") || !similar("I'm allergic to peanuts", "Allergic to peanuts") || similar("I live in Denver", "Has a dog named Biscuit") {
+		t.Fatal("similar")
+	}
+}

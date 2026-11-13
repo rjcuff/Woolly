@@ -372,3 +372,18 @@ func looksLikeQuestion(s string) bool {
 func norm(s string) string {
 	return strings.ToLower(strings.Join(strings.Fields(strings.Trim(s, ".! ")), " "))
 }
+
+// ExtractFacts asks the model for the facts in text, without saving them.
+// Imports use it to read a whole chat history.
+func ExtractFacts(ctx context.Context, m Model, text string) ([]string, error) {
+	l := &Learner{Model: m}
+	facts, err := l.extract(ctx, text)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(facts))
+	for _, f := range facts {
+		out = append(out, f.Fact)
+	}
+	return out, nil
+}
